@@ -2,7 +2,7 @@ mod markers_and_loops;
 
 use serde::{Deserialize, Serialize};
 
-pub use markers_and_loops::{Marker, SavedLoop};
+pub use markers_and_loops::{DeletedMarkers, Marker, SavedLoop};
 
 pub const MIN_SPEED_PERCENT: f64 = 10.0;
 pub const MAX_SPEED_PERCENT: f64 = 150.0;

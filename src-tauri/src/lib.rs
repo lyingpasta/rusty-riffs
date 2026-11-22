@@ -48,6 +48,7 @@ pub fn run() {
             commands::add_marker,
             commands::rename_marker,
             commands::delete_marker,
+            commands::delete_markers_in_range,
             commands::create_loop,
             commands::create_loop_from_range,
             commands::rename_loop,

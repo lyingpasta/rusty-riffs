@@ -9,7 +9,7 @@ use crate::error::AppError;
 use crate::player::Player;
 use crate::settings_store::SettingsStore;
 use crate::song_loader::load_song;
-use crate::song_settings::{Pitch, SongSettings, Trainer};
+use crate::song_settings::{DeletedMarkers, Pitch, SongSettings, Trainer};
 
 pub const PLAYER_STATE_EVENT: &str = "player-state";
 
@@ -144,6 +144,16 @@ pub fn rename_marker(app: AppHandle, player: State<'_, SharedPlayer>, marker_id:
 #[tauri::command]
 pub fn delete_marker(app: AppHandle, player: State<'_, SharedPlayer>, marker_id: u32) -> Result<Vec<String>, AppError> {
     change_settings(&app, &player, |settings| settings.delete_marker(marker_id))
+}
+
+#[tauri::command]
+pub fn delete_markers_in_range(
+    app: AppHandle,
+    player: State<'_, SharedPlayer>,
+    start_seconds: f64,
+    end_seconds: f64,
+) -> Result<DeletedMarkers, AppError> {
+    change_settings(&app, &player, |settings| settings.delete_markers_in_range(start_seconds, end_seconds))
 }
 
 #[tauri::command]

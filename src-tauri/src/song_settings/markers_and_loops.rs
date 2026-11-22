@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 
 use super::SongSettings;
 
+const MARKER_REUSE_TOLERANCE_SECONDS: f64 = 0.05;
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Marker {
@@ -19,6 +21,13 @@ pub struct SavedLoop {
     pub start_marker_id: u32,
     pub end_marker_id: u32,
     pub speed_percent: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeletedMarkers {
+    pub marker_count: usize,
+    pub removed_loop_names: Vec<String>,
 }
 
 impl SongSettings {
@@ -74,9 +83,33 @@ impl SongSettings {
 
     pub fn add_loop_from_range(&mut self, start_seconds: f64, end_seconds: f64) -> u32 {
         let name = self.next_loop_name();
-        let start_marker_id = self.insert_marker(format!("{name} start"), start_seconds.min(end_seconds));
-        let end_marker_id = self.insert_marker(format!("{name} end"), start_seconds.max(end_seconds));
+        let start_marker_id = self.marker_at_or_new(format!("{name} start"), start_seconds.min(end_seconds));
+        let end_marker_id = self.marker_at_or_new(format!("{name} end"), start_seconds.max(end_seconds));
         self.insert_loop(name, start_marker_id, end_marker_id)
+    }
+
+    pub fn delete_markers_in_range(&mut self, start_seconds: f64, end_seconds: f64) -> DeletedMarkers {
+        let (from, to) = (start_seconds.min(end_seconds), start_seconds.max(end_seconds));
+        let doomed_ids: Vec<u32> = self
+            .markers
+            .iter()
+            .filter(|marker| marker.seconds >= from - MARKER_REUSE_TOLERANCE_SECONDS)
+            .filter(|marker| marker.seconds <= to + MARKER_REUSE_TOLERANCE_SECONDS)
+            .map(|marker| marker.id)
+            .collect();
+        let removed_loop_names = doomed_ids.iter().flat_map(|id| self.delete_marker(*id)).collect();
+        DeletedMarkers { marker_count: doomed_ids.len(), removed_loop_names }
+    }
+
+    fn marker_at_or_new(&mut self, name: String, seconds: f64) -> u32 {
+        let existing = self
+            .markers
+            .iter()
+            .find(|marker| (marker.seconds - seconds).abs() <= MARKER_REUSE_TOLERANCE_SECONDS);
+        match existing {
+            Some(marker) => marker.id,
+            None => self.insert_marker(name, seconds),
+        }
     }
 
     pub fn rename_loop(&mut self, loop_id: u32, name: String) {
@@ -229,6 +262,39 @@ mod tests {
         settings.add_loop_from_range(5.0, 6.0);
         let names: Vec<&str> = settings.loops.iter().map(|saved| saved.name.as_str()).collect();
         assert_eq!(names, vec!["Loop 2", "Loop 1"]);
+    }
+
+    #[test]
+    fn range_loop_reuses_markers_already_at_its_edges() {
+        let mut settings = SongSettings::default();
+        let verse = settings.add_marker(10.0);
+        let loop_id = settings.add_loop_from_range(10.02, 14.0);
+        let saved = settings.loops.iter().find(|saved| saved.id == loop_id).unwrap();
+        assert_eq!(saved.start_marker_id, verse);
+        assert_eq!(settings.markers.len(), 2);
+    }
+
+    #[test]
+    fn deleting_a_range_removes_markers_inside_and_on_its_edges() {
+        let mut settings = SongSettings::default();
+        settings.add_marker(5.0);
+        settings.add_marker(10.0);
+        settings.add_marker(15.0);
+        settings.add_marker(20.0);
+        let deleted = settings.delete_markers_in_range(15.0, 10.0);
+        assert_eq!(deleted.marker_count, 2);
+        let remaining: Vec<f64> = settings.markers.iter().map(|marker| marker.seconds).collect();
+        assert_eq!(remaining, vec![5.0, 20.0]);
+    }
+
+    #[test]
+    fn deleting_a_range_reports_the_loops_it_removed() {
+        let mut settings = SongSettings::default();
+        settings.add_loop_from_range(1.0, 2.0);
+        settings.add_marker(30.0);
+        let deleted = settings.delete_markers_in_range(0.0, 1.5);
+        assert_eq!(deleted.removed_loop_names, vec!["Loop 1".to_string()]);
+        assert!(settings.loops.is_empty());
     }
 
     #[test]
