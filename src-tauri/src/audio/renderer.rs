@@ -43,7 +43,7 @@ impl EngineFeedback {
     }
 
     fn publish_position(&self, renderer: &Renderer) {
-        let heard_position = renderer.transport.position().saturating_sub(renderer.stretch.input_latency());
+        let heard_position = renderer.transport.position().saturating_sub(renderer.latency_in_song_frames());
         self.position_frame.store(heard_position as u64, Ordering::Relaxed);
     }
 
@@ -60,6 +60,7 @@ pub struct Renderer {
     transport: Transport,
     stretch: Stretch,
     device_sample_rate: u32,
+    device_latency_frames: usize,
     is_playing: bool,
     speed_percent: f64,
     pitch_semitones: f64,
@@ -75,6 +76,7 @@ impl Renderer {
             transport: Transport::default(),
             stretch: Stretch::preset_default(STEREO_CHANNELS as u32, device_sample_rate),
             device_sample_rate,
+            device_latency_frames: 0,
             is_playing: false,
             speed_percent: NORMAL_SPEED_PERCENT,
             pitch_semitones: 0.0,
@@ -98,6 +100,20 @@ impl Renderer {
             EngineCommand::SetPreroll(frames) => self.transport.set_preroll_frames(frames),
         }
         self.feedback.publish_position(self);
+    }
+
+    pub fn set_device_latency_frames(&mut self, frames: usize) {
+        self.device_latency_frames = frames;
+    }
+
+    fn latency_in_song_frames(&self) -> usize {
+        let Some(song) = &self.song else {
+            return 0;
+        };
+        let pending_output_frames = (self.device_latency_frames + self.stretch.output_latency()) as f64;
+        let song_frames_per_output_frame = self.speed_percent / NORMAL_SPEED_PERCENT * song.sample_rate as f64
+            / self.device_sample_rate as f64;
+        self.stretch.input_latency() + (pending_output_frames * song_frames_per_output_frame).round() as usize
     }
 
     pub fn render(&mut self, output: &mut [f32]) {
@@ -231,6 +247,19 @@ mod tests {
         let output = render_seconds(&mut renderer, SAMPLE_RATE, 2.0);
         let frequency = estimate_frequency(&output, SAMPLE_RATE);
         assert!((frequency - 440.0).abs() < 5.0, "got {frequency} Hz");
+    }
+
+    #[test]
+    fn reported_position_is_what_is_heard_after_output_delays() {
+        let mut renderer = playing_renderer(SAMPLE_RATE, sine_song(440.0, 4.0));
+        renderer.apply(EngineCommand::SetSpeed(50.0));
+        let device_latency_frames = 2205;
+        renderer.set_device_latency_frames(device_latency_frames);
+        render_seconds(&mut renderer, SAMPLE_RATE, 1.0);
+        let pending_output_frames = device_latency_frames + renderer.stretch.output_latency();
+        let expected_lag = renderer.stretch.input_latency() + pending_output_frames / 2;
+        let lag = renderer.transport.position() - renderer.feedback.position_frame();
+        assert!(lag.abs_diff(expected_lag) <= 1, "lag {lag}, expected {expected_lag}");
     }
 
     #[test]

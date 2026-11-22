@@ -3,7 +3,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{ErrorKind, SampleFormat, StreamConfig};
+use cpal::{ErrorKind, OutputCallbackInfo, SampleFormat, StreamConfig};
 
 use crate::audio::STEREO_CHANNELS;
 use crate::audio::renderer::{EngineCommand, EngineFeedback, Renderer};
@@ -68,15 +68,17 @@ fn build_stream(
     }
     let config: StreamConfig = supported_config.into();
     let device_channels = config.channels as usize;
-    let mut renderer = Renderer::new(config.sample_rate, feedback);
+    let device_sample_rate = config.sample_rate;
+    let mut renderer = Renderer::new(device_sample_rate, feedback);
     let mut stereo_block = Vec::with_capacity(1 << 15);
     let stream = device
         .build_output_stream(
             config,
-            move |output: &mut [f32], _| {
+            move |output: &mut [f32], info: &OutputCallbackInfo| {
                 while let Ok(command) = commands.try_recv() {
                     renderer.apply(command);
                 }
+                renderer.set_device_latency_frames(device_latency_frames(info, device_sample_rate));
                 stereo_block.resize(output.len() / device_channels * STEREO_CHANNELS, 0.0);
                 renderer.render(&mut stereo_block);
                 spread_to_device_channels(&stereo_block, output, device_channels);
@@ -87,6 +89,12 @@ fn build_stream(
         .map_err(to_output_error)?;
     stream.play().map_err(to_output_error)?;
     Ok(stream)
+}
+
+fn device_latency_frames(info: &OutputCallbackInfo, sample_rate: u32) -> usize {
+    let timestamp = info.timestamp();
+    let latency = timestamp.playback.duration_since(timestamp.callback);
+    (latency.as_secs_f64() * sample_rate as f64).round() as usize
 }
 
 fn spread_to_device_channels(stereo: &[f32], output: &mut [f32], device_channels: usize) {
