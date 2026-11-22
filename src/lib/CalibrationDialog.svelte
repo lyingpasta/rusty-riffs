@@ -92,7 +92,7 @@
     {#if phase.kind === 'tapping'}
       <p>
         Press Space as soon as you hear each click. They come at random moments, so react rather than predict, the way
-        you'd press m on a note you're listening for. The first {WARM_UP_CLICKS} clicks are a warm-up.
+        you'd press m on a note you're listening for. You can close your eyes: the {WARM_UP_CLICKS} warm-up clicks are low, the counted ones higher, and the last one highest.
       </p>
       <p class="tap-count" class:flash={isFlashing} aria-live="polite">
         {tapCount === 0 ? 'Waiting for your first tap…' : `${tapCount} ${tapCount === 1 ? 'tap' : 'taps'}`}

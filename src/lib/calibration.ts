@@ -4,7 +4,9 @@ const SHORTEST_GAP_SECONDS = 0.8
 const LONGEST_GAP_SECONDS = 2
 const LAST_CLICK_TAIL_SECONDS = 0.8
 const LEAD_IN_SECONDS = 0.8
-const CLICK_FREQUENCY_HERTZ = 1500
+const WARM_UP_CLICK_HERTZ = 880
+const COUNTED_CLICK_HERTZ = 1320
+const LAST_CLICK_HERTZ = 1760
 const CLICK_DURATION_SECONDS = 0.03
 const EARLIEST_TAP_SECONDS = -0.1
 const LATEST_TAP_SECONDS = 0.6
@@ -24,7 +26,7 @@ export interface CalibrationSession {
 export function startCalibration(): CalibrationSession {
   const audio = new AudioContext()
   const clickTimes = randomClickTimes(audio.currentTime + LEAD_IN_SECONDS)
-  clickTimes.forEach((time) => scheduleClick(audio, time))
+  clickTimes.forEach((time, index) => scheduleClick(audio, time, clickFrequency(index)))
   const endTime = clickTimes[clickTimes.length - 1] + LAST_CLICK_TAIL_SECONDS
   keepOutputRunning(audio, endTime)
   const taps: number[] = []
@@ -97,10 +99,16 @@ function keepOutputRunning(audio: AudioContext, until: number): void {
   silence.stop(until + LEAD_IN_SECONDS)
 }
 
-function scheduleClick(audio: AudioContext, time: number): void {
+function clickFrequency(index: number): number {
+  if (index < WARM_UP_CLICKS) return WARM_UP_CLICK_HERTZ
+  if (index === CLICK_COUNT - 1) return LAST_CLICK_HERTZ
+  return COUNTED_CLICK_HERTZ
+}
+
+function scheduleClick(audio: AudioContext, time: number, frequency: number): void {
   const oscillator = audio.createOscillator()
   const envelope = audio.createGain()
-  oscillator.frequency.value = CLICK_FREQUENCY_HERTZ
+  oscillator.frequency.value = frequency
   envelope.gain.setValueAtTime(0.0001, time)
   envelope.gain.exponentialRampToValueAtTime(0.6, time + 0.002)
   envelope.gain.exponentialRampToValueAtTime(0.0001, time + CLICK_DURATION_SECONDS)
