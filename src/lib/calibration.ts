@@ -8,9 +8,8 @@ const WARM_UP_CLICK_HERTZ = 880
 const COUNTED_CLICK_HERTZ = 1320
 const LAST_CLICK_HERTZ = 1760
 const CLICK_DURATION_SECONDS = 0.03
-const EARLIEST_TAP_SECONDS = -0.1
-const LATEST_TAP_SECONDS = 0.6
-const MINIMUM_MATCHED_TAPS = 6
+const LATEST_REACTION_SECONDS = 0.6
+const MINIMUM_ANSWERED_CLICKS = 6
 const MILLISECONDS_PER_SECOND = 1000
 const MAX_TIMESTAMP_DISAGREEMENT_SECONDS = 0.5
 
@@ -41,24 +40,22 @@ export function startCalibration(): CalibrationSession {
 }
 
 export interface CalibrationResult {
-  tapCount: number
-  matchedTapCount: number
+  countedClickCount: number
+  answeredClickCount: number
   offsetMilliseconds: number | null
 }
 
 export function measureOffset(clickTimes: number[], taps: number[]): CalibrationResult {
   const countedClicks = clickTimes.slice(WARM_UP_CLICKS)
-  const offsets = taps.flatMap((tap) => {
-    const offset = countedClicks
-      .map((click) => tap - click)
-      .find((candidate) => candidate >= EARLIEST_TAP_SECONDS && candidate <= LATEST_TAP_SECONDS)
-    return offset === undefined ? [] : [offset]
+  const reactions = countedClicks.flatMap((click) => {
+    const firstPressAfter = taps.find((tap) => tap >= click && tap - click <= LATEST_REACTION_SECONDS)
+    return firstPressAfter === undefined ? [] : [firstPressAfter - click]
   })
-  const hasEnoughTaps = offsets.length >= MINIMUM_MATCHED_TAPS
+  const hasEnoughReactions = reactions.length >= MINIMUM_ANSWERED_CLICKS
   return {
-    tapCount: taps.length,
-    matchedTapCount: offsets.length,
-    offsetMilliseconds: hasEnoughTaps ? median(offsets) * MILLISECONDS_PER_SECOND : null,
+    countedClickCount: countedClicks.length,
+    answeredClickCount: reactions.length,
+    offsetMilliseconds: hasEnoughReactions ? median(reactions) * MILLISECONDS_PER_SECOND : null,
   }
 }
 

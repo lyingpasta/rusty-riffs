@@ -67,8 +67,8 @@
   }
 
   function describe(offset: number): string {
-    const rounded = Math.round(Math.abs(offset))
-    return offset >= 0 ? `You react ${rounded} ms after the click.` : `You pressed ${rounded} ms before the click on average.`
+    const rounded = Math.round(offset)
+    return `You react ${rounded} ms after the click.`
   }
 
   onMount(() => {
@@ -105,8 +105,8 @@
       <div class="actions"><button onclick={close}>Cancel</button></div>
     {:else if phase.result.offsetMilliseconds === null}
       <p>
-        Not enough taps landed near the clicks: {phase.result.matchedTapCount} of your {phase.result.tapCount} taps were
-        within 0.6 s after a click (warm-up excluded), and 6 are needed. Try again, pressing Space on every click.
+        Only {phase.result.answeredClickCount} of the {phase.result.countedClickCount} counted clicks got a press within
+        0.6 s after them, and 6 are needed. Presses before a click don't count. Try again, reacting to every click.
       </p>
       <div class="actions">
         <button onclick={close}>Cancel</button>
