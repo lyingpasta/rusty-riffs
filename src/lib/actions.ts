@@ -4,6 +4,7 @@ import { player } from './player.svelte'
 import { applyTheme, nextTheme } from './theme'
 import { nearestAttackSeconds } from './attacks'
 import { timing } from './timing.svelte'
+import { pickSongFile } from './songPicker'
 import { activeLoop, currentSpeed, markerAtOrBefore, markerById, neighbourLoop, neighbourMarker } from './songModel'
 
 const SPEED_STEP_PERCENT = 5
@@ -54,6 +55,12 @@ function seek(seconds: number): void {
 }
 
 export const actions = {
+  openSong(): void {
+    if (player.isLoading) return
+    pickSongFile()
+      .then((path) => (path === null ? undefined : player.open(path)))
+      .catch((error) => (player.error = String(error)))
+  },
   togglePlaying(): void {
     withSettings(() => player.run(() => backend.setPlaying(!player.state?.isPlaying)))
   },

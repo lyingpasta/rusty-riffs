@@ -15,7 +15,7 @@
   const TIMING_STEP_MILLISECONDS = 10
   const NO_LOOP = ''
 
-  let { settings, onopen }: { settings: SongSettings | null; onopen: () => void } = $props()
+  let { settings }: { settings: SongSettings | null } = $props()
 
   const orderedLoops = $derived(
     settings ? loopSpans(settings).sort((left, right) => left.startSeconds - right.startSeconds) : [],
@@ -39,7 +39,7 @@
 
 <nav class="bar">
   <Group label="Song">
-    <Pad icon="open" onclick={onopen} disabled={player.isLoading} title="Open a song (O)" />
+    <Pad icon="open" onclick={actions.openSong} disabled={player.isLoading} title="Open a song (O)" />
     <Pad
       icon={player.state?.isPlaying ? 'pause' : 'play'}
       onclick={actions.togglePlaying}

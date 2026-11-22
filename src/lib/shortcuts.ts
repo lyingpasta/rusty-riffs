@@ -16,6 +16,7 @@ export interface Shortcut {
 const TEXT_INPUT_TYPES = new Set(['text', 'number', 'search'])
 
 export const shortcuts: Shortcut[] = [
+  { group: 'Playback', mode: 'normal', keys: ['O'], label: 'O', description: 'Open a song', run: actions.openSong },
   { group: 'Playback', mode: 'any', keys: [' '], label: 'Space', description: 'Play / pause', run: actions.togglePlaying },
   { group: 'Playback', mode: 'any', keys: ['h', 'l'], label: 'h / l', description: 'Nudge −1 s / +1 s', run: (event) => actions.nudge(event.key === 'l' ? 1 : -1, false) },
   { group: 'Playback', mode: 'any', keys: ['H', 'L'], label: 'H / L', description: 'Nudge −5 s / +5 s', run: (event) => actions.nudge(event.key === 'L' ? 1 : -1, true) },

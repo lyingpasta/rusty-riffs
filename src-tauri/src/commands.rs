@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::audio::peaks::{PEAKS_PER_SECOND, compute_peaks};
 use crate::error::AppError;
 use crate::player::Player;
+use crate::last_song_store::LastSongStore;
 use crate::settings_store::SettingsStore;
 use crate::song_loader::load_song;
 use crate::song_settings::{DeletedMarkers, Pitch, SongSettings, Trainer};
@@ -72,18 +73,46 @@ pub async fn open_song(
     app: AppHandle,
     player: State<'_, SharedPlayer>,
     store: State<'_, SettingsStore>,
+    last_song: State<'_, LastSongStore>,
     path: PathBuf,
 ) -> Result<Waveform, AppError> {
+    open_song_at(&app, &player, &store, path.clone()).await?;
+    let waveform = current_waveform(&player)?;
+    if let Err(error) = last_song.remember(&path) {
+        log::error!("could not remember the last song: {error}");
+    }
+    Ok(waveform)
+}
+
+#[tauri::command]
+pub async fn open_last_song(
+    app: AppHandle,
+    player: State<'_, SharedPlayer>,
+    store: State<'_, SettingsStore>,
+    last_song: State<'_, LastSongStore>,
+) -> Result<Option<Waveform>, AppError> {
+    let Some(path) = last_song.recall()? else {
+        return Ok(None);
+    };
+    open_song_at(&app, &player, &store, path).await?;
+    Ok(Some(current_waveform(&player)?))
+}
+
+async fn open_song_at(app: &AppHandle, player: &SharedPlayer, store: &SettingsStore, path: PathBuf) -> Result<(), AppError> {
     let song = tauri::async_runtime::spawn_blocking(move || load_song(&path))
         .await
         .map_err(|error| AppError::Decode(error.to_string()))??;
-    let waveform = Waveform { peaks: compute_peaks(&song.audio), peaks_per_second: PEAKS_PER_SECOND };
-    let settings = load_song_settings(&store, &song.id);
-    update_player(&app, &player, |player| {
+    let settings = load_song_settings(store, &song.id);
+    update_player(app, player, |player| {
         player.load_song(song, settings);
         Ok(())
-    })?;
-    Ok(waveform)
+    })
+}
+
+fn current_waveform(player: &SharedPlayer) -> Result<Waveform, AppError> {
+    let player = player.lock().expect("player lock poisoned");
+    let song = player.loaded_song().ok_or(AppError::NoSongLoaded)?;
+    Ok(Waveform { peaks: compute_peaks(&song.audio), peaks_per_second: PEAKS_PER_SECOND })
 }
 
 #[tauri::command]

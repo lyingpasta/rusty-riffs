@@ -27,12 +27,20 @@ class Player {
   }
 
   async open(path: string): Promise<void> {
+    await this.loadWaveform(() => backend.openSong(path))
+  }
+
+  async openLast(): Promise<void> {
+    await this.loadWaveform(async () => (await backend.openLastSong()) ?? this.waveform)
+  }
+
+  private async loadWaveform(load: () => Promise<Waveform | null>): Promise<void> {
     this.isLoading = true
     this.error = null
     try {
-      this.waveform = await backend.openSong(path)
+      this.waveform = await load()
     } catch (error) {
-      this.error = String(error)
+      this.error = `Could not open the song: ${String(error)}`
     } finally {
       this.isLoading = false
     }

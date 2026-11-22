@@ -65,6 +65,7 @@ interface Playhead {
 
 export const backend = {
   openSong: (path: string) => invoke<Waveform>('open_song', { path }),
+  openLastSong: () => invoke<Waveform | null>('open_last_song'),
   getState: () => invoke<PlayerState>('get_state'),
   setPlaying: (isPlaying: boolean) => invoke<void>('set_playing', { isPlaying }),
   seek: (seconds: number) => invoke<void>('seek', { seconds }),

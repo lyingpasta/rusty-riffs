@@ -3,18 +3,13 @@
   import { interaction } from './lib/interaction.svelte'
   import { player } from './lib/player.svelte'
   import { findShortcut } from './lib/shortcuts'
-  import { onSongFileDropped, pickSongFile } from './lib/songPicker'
+  import { onSongFileDropped } from './lib/songPicker'
   import CalibrationDialog from './lib/CalibrationDialog.svelte'
   import CheatSheet from './lib/CheatSheet.svelte'
   import RenameDialog from './lib/RenameDialog.svelte'
   import StatusLine from './lib/StatusLine.svelte'
   import Toolbar from './lib/Toolbar.svelte'
   import Waveform from './lib/Waveform.svelte'
-
-  async function chooseSong(): Promise<void> {
-    const path = await pickSongFile()
-    if (path) await player.open(path)
-  }
 
   function handleKeydown(event: KeyboardEvent): void {
     if (interaction.renameTarget || interaction.isCalibrationOpen) return
@@ -26,7 +21,7 @@
 
   onMount(() => {
     const disconnect = player.connect()
-    disconnect.catch((error) => (player.error = String(error)))
+    disconnect.then(() => player.openLast()).catch((error) => (player.error = String(error)))
     const unlistenDrop = onSongFileDropped((path) => player.open(path))
     return () => {
       disconnect.then((stop) => stop()).catch(() => undefined)
@@ -38,7 +33,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="app">
-  <Toolbar settings={player.state?.song ? player.state.settings : null} onopen={chooseSong} />
+  <Toolbar settings={player.state?.song ? player.state.settings : null} />
   <main>
     <Waveform />
   </main>

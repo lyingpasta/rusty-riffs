@@ -18,6 +18,7 @@ Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Sve
 - Vim-style shortcuts, nearly all under the right hand, so the left can stay on the guitar neck
 - Three dark colour themes: Ink & bronze, Petrol & moonlight, Aubergine & ember
 - Every setting is saved per song, keyed by the file's contents, so reopening a song (even renamed or moved) restores everything
+- The app reopens the last song you played when it starts
 
 ## Keyboard shortcuts
 
@@ -25,6 +26,7 @@ Nearly every key is under the right hand (thumb on Space), so you can drive the 
 
 | Key | Action |
 |---|---|
+| `O` | Open a song |
 | `Space` | Play / pause |
 | `h` / `l` | Nudge −1 s / +1 s |
 | `H` / `L` | Nudge −5 s / +5 s |

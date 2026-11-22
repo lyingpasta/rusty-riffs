@@ -2,6 +2,7 @@ mod audio;
 mod commands;
 mod engine_sync;
 mod error;
+mod last_song_store;
 mod player;
 mod settings_store;
 mod song_loader;
@@ -12,10 +13,12 @@ use std::sync::mpsc;
 
 use tauri::Manager;
 
+use crate::last_song_store::LastSongStore;
 use crate::player::Player;
 use crate::settings_store::SettingsStore;
 
 const SONG_SETTINGS_DIRECTORY: &str = "songs";
+const LAST_SONG_FILE: &str = "last-song.txt";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -26,8 +29,9 @@ pub fn run() {
                 app.handle()
                     .plugin(tauri_plugin_log::Builder::default().level(log::LevelFilter::Info).build())?;
             }
-            let settings_directory = app.path().app_data_dir()?.join(SONG_SETTINGS_DIRECTORY);
-            app.manage(SettingsStore::new(settings_directory));
+            let data_directory = app.path().app_data_dir()?;
+            app.manage(SettingsStore::new(data_directory.join(SONG_SETTINGS_DIRECTORY)));
+            app.manage(LastSongStore::new(data_directory.join(LAST_SONG_FILE)));
             let (device_event_sender, device_event_receiver) = mpsc::channel();
             app.manage(Mutex::new(Player::new(device_event_sender)?));
             engine_sync::spawn_playhead_updates(app.handle().clone());
@@ -36,6 +40,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::open_song,
+            commands::open_last_song,
             commands::get_state,
             commands::set_playing,
             commands::seek,
