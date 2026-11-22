@@ -6,7 +6,9 @@
   import { onSongFileDropped, pickSongFile } from './lib/songPicker'
   import CheatSheet from './lib/CheatSheet.svelte'
   import Controls from './lib/Controls.svelte'
+  import Markers from './lib/Markers.svelte'
   import PositionReadout from './lib/PositionReadout.svelte'
+  import Practice from './lib/Practice.svelte'
   import Waveform from './lib/Waveform.svelte'
 
   let isCheatSheetOpen = $state(false)
@@ -56,6 +58,10 @@
 
   {#if player.state?.song}
     <Controls settings={player.state.settings} />
+    <div class="panels">
+      <Markers markers={player.state.settings.markers} />
+      <Practice settings={player.state.settings} />
+    </div>
   {/if}
 </main>
 
