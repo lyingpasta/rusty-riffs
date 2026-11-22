@@ -6,13 +6,19 @@
 
   type Phase = { kind: 'tapping'; clicksHeard: number } | { kind: 'result'; offset: number | null }
 
+  const TAP_FLASH_MILLISECONDS = 120
+
   let session: CalibrationSession | null = null
   let phase = $state<Phase>({ kind: 'tapping', clicksHeard: 0 })
+  let tapCount = $state(0)
+  let isFlashing = $state(false)
+  let flashTimer: ReturnType<typeof setTimeout> | undefined
 
   function begin(): void {
     session?.stop()
     session = startCalibration()
     phase = { kind: 'tapping', clicksHeard: 0 }
+    tapCount = 0
   }
 
   function track(): void {
@@ -39,7 +45,19 @@
     event.stopPropagation()
     event.preventDefault()
     if (event.key === 'Escape') return close()
-    if (event.key === ' ' && phase.kind === 'tapping' && !event.repeat) session?.tap()
+    if (event.key === ' ' && phase.kind === 'tapping' && !event.repeat) registerTap()
+  }
+
+  function registerTap(): void {
+    session?.tap()
+    tapCount += 1
+    isFlashing = true
+    clearTimeout(flashTimer)
+    flashTimer = setTimeout(() => (isFlashing = false), TAP_FLASH_MILLISECONDS)
+  }
+
+  function takeFocus(dialog: HTMLElement): void {
+    dialog.focus()
   }
 
   function describe(offset: number): string {
@@ -63,10 +81,13 @@
 </script>
 
 <div class="backdrop" role="presentation">
-  <div class="dialog" role="dialog" aria-label="Timing calibration">
+  <div class="dialog" role="dialog" aria-modal="true" aria-label="Timing calibration" tabindex="-1" use:takeFocus>
     <h2>Timing calibration</h2>
     {#if phase.kind === 'tapping'}
       <p>Press Space along with each click, the way you'd press m on a note you hear. The first four clicks are a warm-up.</p>
+      <p class="tap-count" class:flash={isFlashing} aria-live="polite">
+        {tapCount === 0 ? 'Waiting for your first tap…' : `${tapCount} ${tapCount === 1 ? 'tap' : 'taps'}`}
+      </p>
       <div class="clicks" aria-label="{phase.clicksHeard} of 16 clicks">
         {#each { length: 16 } as _, index (index)}
           <span class="click" class:heard={index < phase.clicksHeard} class:warm-up={index < 4}></span>
@@ -101,6 +122,7 @@
   }
 
   .dialog {
+    outline: none;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -119,6 +141,15 @@
     margin: 0;
     color: var(--muted);
     line-height: 1.4;
+  }
+
+  .tap-count {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tap-count.flash {
+    color: var(--accent);
   }
 
   .clicks {

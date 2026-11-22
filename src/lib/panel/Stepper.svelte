@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon, { type IconName } from './Icon.svelte'
+  import { keepFocusOnMouseDown } from './keepFocus'
 
   let {
     label,
@@ -18,12 +19,12 @@
   } = $props()
 </script>
 
-<button class="step" onclick={ondecrement} aria-label="Decrease {label}" title="Decrease {label}">−</button>
-<button class="value" onclick={onreset} disabled={!onreset} title={onreset ? `${label} (click to reset)` : label} aria-label={label}>
+<button class="step" onclick={ondecrement} onmousedown={keepFocusOnMouseDown} aria-label="Decrease {label}" title="Decrease {label}">−</button>
+<button class="value" onclick={onreset} onmousedown={keepFocusOnMouseDown} disabled={!onreset} title={onreset ? `${label} (click to reset)` : label} aria-label={label}>
   {#if icon}<span class="value-icon"><Icon name={icon} /></span>{/if}
   {value}
 </button>
-<button class="step" onclick={onincrement} aria-label="Increase {label}" title="Increase {label}">+</button>
+<button class="step" onclick={onincrement} onmousedown={keepFocusOnMouseDown} aria-label="Increase {label}" title="Increase {label}">+</button>
 
 <style>
   .step {

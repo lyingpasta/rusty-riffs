@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import Icon, { type IconName } from './Icon.svelte'
+  import { keepFocusOnMouseDown } from './keepFocus'
 
   let {
     onclick,
@@ -19,7 +20,7 @@
   } = $props()
 </script>
 
-<button class="pad" class:on={isOn} class:icon-only={!children} {onclick} {title} aria-label={title} {disabled} aria-pressed={isOn}>
+<button class="pad" class:on={isOn} class:icon-only={!children} {onclick} onmousedown={keepFocusOnMouseDown} {title} aria-label={title} {disabled} aria-pressed={isOn}>
   {#if icon}<Icon name={icon} />{/if}
   {#if children}{@render children()}{/if}
 </button>

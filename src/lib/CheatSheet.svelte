@@ -2,12 +2,16 @@
   import { interaction } from './interaction.svelte'
   import { shortcuts } from './shortcuts'
 
+  function takeFocus(sheet: HTMLElement): void {
+    sheet.focus()
+  }
+
   const groups = [...new Set(shortcuts.map((shortcut) => shortcut.group))]
   const MODE_NOTES: Record<string, string> = { 'new-loop': ' (in new-loop mode)', selection: ' (in selection mode)' }
 </script>
 
 <div class="backdrop" role="presentation" onclick={() => (interaction.isCheatSheetOpen = false)}>
-  <div class="sheet" role="dialog" aria-label="Keyboard shortcuts">
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" tabindex="-1" use:takeFocus>
     {#each groups as group (group)}
       <section>
         <h2>{group}</h2>
@@ -33,6 +37,7 @@
   }
 
   .sheet {
+    outline: none;
     display: grid;
     grid-template-columns: repeat(2, minmax(240px, 1fr));
     gap: 12px 28px;
