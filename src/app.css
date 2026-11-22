@@ -1,0 +1,93 @@
+:root {
+  --background: #f6f5f2;
+  --surface: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6b6b70;
+  --accent: #c2410c;
+  --border: #dedcd6;
+  --error: #b91c1c;
+  --waveform-background: #ecebe6;
+  --waveform-peak: #57534e;
+  --playhead: #c2410c;
+  --loop-fill: rgba(194, 65, 12, 0.18);
+  --marker: #2563eb;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #17171a;
+    --surface: #222226;
+    --text: #ececef;
+    --muted: #9a9aa2;
+    --accent: #fb923c;
+    --border: #34343a;
+    --error: #f87171;
+    --waveform-background: #1f1f23;
+    --waveform-peak: #a8a29e;
+    --playhead: #fb923c;
+    --loop-fill: rgba(251, 146, 60, 0.2);
+    --marker: #60a5fa;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.error {
+  margin: 0;
+  color: var(--error);
+}
