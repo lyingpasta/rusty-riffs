@@ -9,34 +9,49 @@ Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Sve
 - Opens mp3, wav, flac, m4a (AAC) and ogg (Vorbis), via the file dialog or drag-and-drop
 - Speed 10%–150% without changing pitch
 - Pitch shift ±12 semitones, with ±50 cents of fine tuning, independent of speed
-- Zoomable, scrollable waveform. Click to seek, drag to set a loop
-- Seamless A–B loop, with an optional 0.5–2 s pre-roll before each restart
+- Zoomable waveform that scrolls smoothly and follows the playhead
+- Named markers, and saved loops built from them. Each loop remembers its own speed, and switching loops is one key
+- Seamless looping, with an optional 0.5–2 s pre-roll before each restart
 - Speed trainer: each repeat of the loop adds a set number of percentage points until a target speed
-- Named markers you can jump to with the number keys
+- Vim-style shortcuts that all sit under the right hand, so the left can stay on the guitar neck
+- Three dark colour themes: Ink & bronze, Petrol & moonlight, Aubergine & ember
 - Every setting is saved per song, keyed by the file's contents, so reopening a song (even renamed or moved) restores everything
 
 ## Keyboard shortcuts
 
-Designed so you can drive it with one hand off the guitar. Press `?` in the app to see this list.
+Every key is under the right hand (thumb on Space), so you can drive the app between phrases. Press `?` in the app to see this list.
 
 | Key | Action |
 |---|---|
 | `Space` | Play / pause |
-| `[` | Set loop start (A) at playhead |
-| `]` | Set loop end (B) at playhead |
-| `L` | Loop on / off |
-| `Shift + L` | Clear loop |
-| `↑` / `↓` | Speed ±5% |
-| `Shift + ↑` / `↓` | Pitch ±1 semitone |
-| `←` / `→` | Nudge ±1 second |
-| `Home` | Jump to loop start (or song start) |
-| `1` – `9` | Jump to marker (in time order) |
-| `M` | Add marker at playhead |
-| `T` | Speed trainer on / off |
-| `P` | Pre-roll: off → 1 s → 2 s |
+| `h` / `l` | Nudge −1 s / +1 s |
+| `H` / `L` | Nudge −5 s / +5 s |
+| `0` | Jump to loop start (or song start) |
+| `j` / `k` | Speed −5% / +5% |
+| `m` | Add marker at playhead |
+| `,` / `.` | Previous / next marker |
+| `i` | Rename marker at playhead |
+| `Backspace` | Delete marker at playhead (and the loops that use it) |
+| `n` | New loop from the marker at the playhead |
+| `,` / `.` (new-loop mode) | Move the new loop's end marker |
+| `Enter` (new-loop mode) | Save and activate the new loop |
+| `[` / `]` | Previous / next saved loop |
+| `o` | Loop on / off |
+| `I` | Rename active loop |
+| `Shift + Backspace` | Delete active loop |
+| `u` | Speed trainer on / off |
+| `p` | Pre-roll: off → 1 s → 2 s |
+| `+` / `-` | Zoom in / out around the playhead |
+| `;` | Next colour theme |
 | `?` | Show / hide shortcuts |
+| `Esc` | Cancel new loop / close help |
 
-On the waveform, drag to set a loop, click to seek, scroll to move and `Ctrl + scroll` to zoom.
+With the mouse:
+- Drag on the waveform to create a loop. This adds a start and an end marker.
+- Click to seek, scroll to move, and `Ctrl + scroll` to zoom around the pointer.
+- Click a loop's bar to activate it, and double-click a marker or loop name to rename it.
+
+Pitch and fine tuning are set from the top bar.
 
 ## Setup
 
@@ -128,7 +143,7 @@ All the audio runs in Rust (see [ADR 0001](docs/adr/0001-audio-engine-in-rust.md
 file ─► symphonia (decode to stereo f32)
           │
           ▼
-       Transport (position, A–B loop with crossfade, pre-roll)
+       Transport (position, active loop with crossfade, pre-roll)
           │
           ▼
        signalsmith-stretch (speed + pitch)
@@ -139,7 +154,7 @@ file ─► symphonia (decode to stereo f32)
 
 - **`src-tauri/src/player.rs`** owns all playback state. The UI sends commands (`src-tauri/src/commands.rs`). Rust replies with `player-state` events, and sends `playhead` events about 30 times a second while playing.
 - **`src-tauri/src/audio/`** holds the real-time side: decoding, the transport, the stretching renderer and the output thread. The audio thread never takes a lock. It receives commands over a channel and reports back through atomics.
-- **`src/`** is the Svelte UI. `src/lib/shortcuts.ts` defines every shortcut, and the `?` cheat sheet is generated from the same table.
+- **`src/`** is the Svelte UI. `src/lib/shortcuts.ts` defines every shortcut, and the `?` cheat sheet is generated from the same table. Colour themes are sets of CSS variables in `src/app.css`.
 - Settings are stored as one JSON file per song, in the app data directory under `songs/` (on Linux, `~/.local/share/dev.lyingpasta.rustyriffs/songs/`).
 
-Domain terms (song, loop, pre-roll, marker, speed trainer…) are defined in [GLOSSARY.md](GLOSSARY.md).
+Domain terms (song, marker, loop, pre-roll, speed trainer…) are defined in [GLOSSARY.md](GLOSSARY.md).

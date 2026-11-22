@@ -13,19 +13,28 @@ export interface Trainer {
 }
 
 export interface Marker {
+  id: number
   name: string
   seconds: number
 }
 
-export interface SongSettings {
+export interface SavedLoop {
+  id: number
+  name: string
+  startMarkerId: number
+  endMarkerId: number
   speedPercent: number
+}
+
+export interface SongSettings {
+  songSpeedPercent: number
   pitch: Pitch
-  loopStartSeconds: number | null
-  loopEndSeconds: number | null
   isLoopEnabled: boolean
   prerollSeconds: number
   trainer: Trainer
   markers: Marker[]
+  loops: SavedLoop[]
+  activeLoopId: number | null
 }
 
 export interface SongInfo {
@@ -57,12 +66,19 @@ export const backend = {
   seekBy: (deltaSeconds: number) => invoke<void>('seek_by', { deltaSeconds }),
   setSpeed: (percent: number) => invoke<void>('set_speed', { percent }),
   setPitch: (pitch: Pitch) => invoke<void>('set_pitch', { pitch }),
-  setLoop: (startSeconds: number | null, endSeconds: number | null) =>
-    invoke<void>('set_loop', { startSeconds, endSeconds }),
-  setLoopEnabled: (isEnabled: boolean) => invoke<void>('set_loop_enabled', { isEnabled }),
   setPreroll: (seconds: number) => invoke<void>('set_preroll', { seconds }),
   setTrainer: (trainer: Trainer) => invoke<void>('set_trainer', { trainer }),
-  setMarkers: (markers: Marker[]) => invoke<void>('set_markers', { markers }),
+  setLoopEnabled: (isEnabled: boolean) => invoke<void>('set_loop_enabled', { isEnabled }),
+  addMarker: (seconds: number) => invoke<number>('add_marker', { seconds }),
+  renameMarker: (markerId: number, name: string) => invoke<void>('rename_marker', { markerId, name }),
+  deleteMarker: (markerId: number) => invoke<string[]>('delete_marker', { markerId }),
+  createLoop: (startMarkerId: number, endMarkerId: number) =>
+    invoke<number>('create_loop', { startMarkerId, endMarkerId }),
+  createLoopFromRange: (startSeconds: number, endSeconds: number) =>
+    invoke<number>('create_loop_from_range', { startSeconds, endSeconds }),
+  renameLoop: (loopId: number, name: string) => invoke<void>('rename_loop', { loopId, name }),
+  deleteLoop: (loopId: number) => invoke<void>('delete_loop', { loopId }),
+  activateLoop: (loopId: number | null) => invoke<void>('activate_loop', { loopId }),
 }
 
 export function onPlayerState(handler: (state: PlayerState) => void): Promise<UnlistenFn> {

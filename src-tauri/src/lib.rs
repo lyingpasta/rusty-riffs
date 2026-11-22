@@ -42,11 +42,17 @@ pub fn run() {
             commands::seek_by,
             commands::set_speed,
             commands::set_pitch,
-            commands::set_loop,
-            commands::set_loop_enabled,
             commands::set_preroll,
             commands::set_trainer,
-            commands::set_markers,
+            commands::set_loop_enabled,
+            commands::add_marker,
+            commands::rename_marker,
+            commands::delete_marker,
+            commands::create_loop,
+            commands::create_loop_from_range,
+            commands::rename_loop,
+            commands::delete_loop,
+            commands::activate_loop,
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

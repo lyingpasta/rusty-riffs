@@ -1,4 +1,8 @@
+mod markers_and_loops;
+
 use serde::{Deserialize, Serialize};
+
+pub use markers_and_loops::{Marker, SavedLoop};
 
 pub const MIN_SPEED_PERCENT: f64 = 10.0;
 pub const MAX_SPEED_PERCENT: f64 = 150.0;
@@ -50,44 +54,52 @@ impl Trainer {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Marker {
-    pub name: String,
-    pub seconds: f64,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SongSettings {
-    pub speed_percent: f64,
+    #[serde(alias = "speedPercent")]
+    pub song_speed_percent: f64,
     pub pitch: Pitch,
-    pub loop_start_seconds: Option<f64>,
-    pub loop_end_seconds: Option<f64>,
     pub is_loop_enabled: bool,
     pub preroll_seconds: f64,
     pub trainer: Trainer,
     pub markers: Vec<Marker>,
+    pub loops: Vec<SavedLoop>,
+    pub active_loop_id: Option<u32>,
 }
 
 impl Default for SongSettings {
     fn default() -> Self {
         SongSettings {
-            speed_percent: DEFAULT_SPEED_PERCENT,
+            song_speed_percent: DEFAULT_SPEED_PERCENT,
             pitch: Pitch::default(),
-            loop_start_seconds: None,
-            loop_end_seconds: None,
             is_loop_enabled: false,
             preroll_seconds: 0.0,
             trainer: Trainer::default(),
             markers: Vec::new(),
+            loops: Vec::new(),
+            active_loop_id: None,
         }
     }
 }
 
 impl SongSettings {
-    pub fn active_loop_seconds(&self) -> Option<(f64, f64)> {
-        let (start, end) = (self.loop_start_seconds?, self.loop_end_seconds?);
-        (self.is_loop_enabled && start < end).then_some((start, end))
+    pub fn current_speed(&self) -> f64 {
+        self.active_loop().map_or(self.song_speed_percent, |active| active.speed_percent)
+    }
+
+    pub fn set_current_speed(&mut self, percent: f64) {
+        let clamped = percent.clamp(MIN_SPEED_PERCENT, MAX_SPEED_PERCENT);
+        match self.active_loop_mut() {
+            Some(active) => active.speed_percent = clamped,
+            None => self.song_speed_percent = clamped,
+        }
+    }
+
+    pub fn looping_seconds(&self) -> Option<(f64, f64)> {
+        if !self.is_loop_enabled {
+            return None;
+        }
+        self.loop_seconds(self.active_loop()?)
     }
 }
 
@@ -115,19 +127,39 @@ mod tests {
     }
 
     #[test]
-    fn loop_is_active_only_when_enabled_and_ordered() {
-        let mut settings = SongSettings { loop_start_seconds: Some(1.0), loop_end_seconds: Some(2.0), ..Default::default() };
-        assert_eq!(settings.active_loop_seconds(), None);
-        settings.is_loop_enabled = true;
-        assert_eq!(settings.active_loop_seconds(), Some((1.0, 2.0)));
-        settings.loop_end_seconds = Some(0.5);
-        assert_eq!(settings.active_loop_seconds(), None);
+    fn speed_belongs_to_the_song_without_an_active_loop() {
+        let mut settings = SongSettings::default();
+        settings.set_current_speed(70.0);
+        assert_eq!(settings.song_speed_percent, 70.0);
+        assert_eq!(settings.current_speed(), 70.0);
+    }
+
+    #[test]
+    fn speed_belongs_to_the_active_loop() {
+        let mut settings = SongSettings::default();
+        let loop_id = settings.add_loop_from_range(1.0, 2.0);
+        settings.set_current_speed(55.0);
+        assert_eq!(settings.current_speed(), 55.0);
+        assert_eq!(settings.song_speed_percent, 100.0);
+        settings.activate_loop(None);
+        assert_eq!(settings.current_speed(), 100.0);
+        settings.activate_loop(Some(loop_id));
+        assert_eq!(settings.current_speed(), 55.0);
+    }
+
+    #[test]
+    fn looping_requires_an_enabled_active_loop() {
+        let mut settings = SongSettings::default();
+        settings.add_loop_from_range(1.0, 2.0);
+        assert_eq!(settings.looping_seconds(), Some((1.0, 2.0)));
+        settings.is_loop_enabled = false;
+        assert_eq!(settings.looping_seconds(), None);
     }
 
     #[test]
     fn missing_fields_fall_back_to_defaults_when_loading() {
-        let settings: SongSettings = serde_json::from_str(r#"{"speedPercent": 70}"#).unwrap();
-        assert_eq!(settings.speed_percent, 70.0);
-        assert_eq!(settings.markers, vec![]);
+        let settings: SongSettings = serde_json::from_str(r#"{"songSpeedPercent": 70}"#).unwrap();
+        assert_eq!(settings.song_speed_percent, 70.0);
+        assert_eq!(settings.loops, vec![]);
     }
 }

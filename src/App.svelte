@@ -1,18 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { actions } from './lib/actions'
+  import { interaction } from './lib/interaction.svelte'
   import { player } from './lib/player.svelte'
-  import { createShortcuts, findShortcut } from './lib/shortcuts'
+  import { findShortcut } from './lib/shortcuts'
   import { onSongFileDropped, pickSongFile } from './lib/songPicker'
   import CheatSheet from './lib/CheatSheet.svelte'
-  import Controls from './lib/Controls.svelte'
-  import Markers from './lib/Markers.svelte'
-  import PositionReadout from './lib/PositionReadout.svelte'
-  import Practice from './lib/Practice.svelte'
+  import RenameDialog from './lib/RenameDialog.svelte'
+  import StatusLine from './lib/StatusLine.svelte'
+  import Toolbar from './lib/Toolbar.svelte'
   import Waveform from './lib/Waveform.svelte'
-
-  let isCheatSheetOpen = $state(false)
-  const shortcuts = createShortcuts(() => (isCheatSheetOpen = !isCheatSheetOpen))
 
   async function chooseSong(): Promise<void> {
     const path = await pickSongFile()
@@ -20,8 +16,8 @@
   }
 
   function handleKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') isCheatSheetOpen = false
-    const shortcut = findShortcut(shortcuts, event)
+    if (interaction.renameTarget) return
+    const shortcut = findShortcut(event, interaction.mode.kind)
     if (!shortcut) return
     event.preventDefault()
     shortcut.run(event)
@@ -36,35 +32,18 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<main>
-  <header>
-    <button onclick={chooseSong} disabled={player.isLoading}>Open song…</button>
-    <h1>{player.isLoading ? 'Loading…' : (player.state?.song?.name ?? 'Drop an audio file here')}</h1>
-  </header>
+<div class="app">
+  <Toolbar settings={player.state?.song ? player.state.settings : null} onopen={chooseSong} />
+  <main>
+    <Waveform />
+  </main>
+  <StatusLine />
+</div>
 
-  {#if player.error}
-    <p class="error" role="alert">{player.error}</p>
-  {/if}
+{#if interaction.renameTarget}
+  <RenameDialog target={interaction.renameTarget} />
+{/if}
 
-  <Waveform />
-
-  <section class="transport">
-    <button onclick={actions.togglePlaying} disabled={!player.state?.song}>
-      {player.state?.isPlaying ? 'Pause' : 'Play'}
-    </button>
-    <PositionReadout />
-    <button class="help" onclick={() => (isCheatSheetOpen = true)}>Shortcuts (?)</button>
-  </section>
-
-  {#if player.state?.song}
-    <Controls settings={player.state.settings} />
-    <div class="panels">
-      <Markers markers={player.state.settings.markers} />
-      <Practice settings={player.state.settings} />
-    </div>
-  {/if}
-</main>
-
-{#if isCheatSheetOpen}
-  <CheatSheet {shortcuts} onclose={() => (isCheatSheetOpen = false)} />
+{#if interaction.isCheatSheetOpen}
+  <CheatSheet />
 {/if}

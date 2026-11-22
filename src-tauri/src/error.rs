@@ -7,6 +7,7 @@ pub enum AppError {
     AudioOutput(String),
     NoSongLoaded,
     Settings(String),
+    InvalidRequest(String),
 }
 
 impl fmt::Display for AppError {
@@ -17,6 +18,7 @@ impl fmt::Display for AppError {
             AppError::AudioOutput(message) => write!(formatter, "audio output error: {message}"),
             AppError::NoSongLoaded => write!(formatter, "no song is loaded"),
             AppError::Settings(message) => write!(formatter, "could not save song settings: {message}"),
+            AppError::InvalidRequest(message) => write!(formatter, "{message}"),
         }
     }
 }

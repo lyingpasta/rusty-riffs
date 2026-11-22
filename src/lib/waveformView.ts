@@ -6,6 +6,9 @@ export interface WaveformView {
 
 const ZOOM_STEP_FACTOR = 1.25
 const MAX_PIXELS_PER_SECOND = 800
+const PLAYHEAD_LEAD_FRACTION = 0.05
+const EASING_TIME_CONSTANT_MILLISECONDS = 60
+const SETTLED_DISTANCE_PIXELS = 0.5
 
 export function secondsToX(view: WaveformView, seconds: number): number {
   return (seconds - view.startSeconds) * view.pixelsPerSecond
@@ -41,5 +44,14 @@ export function zoomAround(view: WaveformView, anchorX: number, isZoomingIn: boo
 export function followPlayhead(view: WaveformView, playheadSeconds: number): WaveformView {
   const isVisible = playheadSeconds >= view.startSeconds && playheadSeconds < view.startSeconds + visibleSeconds(view)
   if (isVisible) return view
-  return { ...view, startSeconds: playheadSeconds }
+  return { ...view, startSeconds: playheadSeconds - visibleSeconds(view) * PLAYHEAD_LEAD_FRACTION }
+}
+
+export function easeTowards(view: WaveformView, targetStartSeconds: number, elapsedMilliseconds: number): WaveformView {
+  const remainingSeconds = targetStartSeconds - view.startSeconds
+  if (Math.abs(remainingSeconds * view.pixelsPerSecond) < SETTLED_DISTANCE_PIXELS) {
+    return { ...view, startSeconds: targetStartSeconds }
+  }
+  const progress = 1 - Math.exp(-elapsedMilliseconds / EASING_TIME_CONSTANT_MILLISECONDS)
+  return { ...view, startSeconds: view.startSeconds + remainingSeconds * progress }
 }

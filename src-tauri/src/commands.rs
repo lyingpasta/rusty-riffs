@@ -9,7 +9,7 @@ use crate::error::AppError;
 use crate::player::Player;
 use crate::settings_store::SettingsStore;
 use crate::song_loader::load_song;
-use crate::song_settings::{Marker, Pitch, SongSettings, Trainer};
+use crate::song_settings::{Pitch, SongSettings, Trainer};
 
 pub const PLAYER_STATE_EVENT: &str = "player-state";
 
@@ -40,7 +40,7 @@ fn save_song_settings(app: &AppHandle, player: &Player) {
 
 fn load_song_settings(store: &SettingsStore, song_id: &str) -> SongSettings {
     match store.load(song_id) {
-        Ok(settings) => settings.unwrap_or_default(),
+        Ok(settings) => settings.unwrap_or_default().repaired(),
         Err(error) => {
             log::error!("{error}; starting with default settings");
             SongSettings::default()
@@ -48,15 +48,23 @@ fn load_song_settings(store: &SettingsStore, song_id: &str) -> SongSettings {
     }
 }
 
-fn update_player(
+fn update_player<R>(
     app: &AppHandle,
     player: &SharedPlayer,
-    change: impl FnOnce(&mut Player) -> Result<(), AppError>,
-) -> Result<(), AppError> {
+    change: impl FnOnce(&mut Player) -> Result<R, AppError>,
+) -> Result<R, AppError> {
     let mut player = player.lock().expect("player lock poisoned");
-    change(&mut player)?;
+    let result = change(&mut player)?;
     publish_state(app, &player);
-    Ok(())
+    Ok(result)
+}
+
+fn change_settings<R>(
+    app: &AppHandle,
+    player: &SharedPlayer,
+    change: impl FnOnce(&mut SongSettings) -> R,
+) -> Result<R, AppError> {
+    update_player(app, player, |player| player.change_settings(change))
 }
 
 #[tauri::command]
@@ -100,33 +108,12 @@ pub fn seek_by(app: AppHandle, player: State<'_, SharedPlayer>, delta_seconds: f
 
 #[tauri::command]
 pub fn set_speed(app: AppHandle, player: State<'_, SharedPlayer>, percent: f64) -> Result<(), AppError> {
-    update_player(&app, &player, |player| {
-        player.set_speed(percent);
-        Ok(())
-    })
+    update_player(&app, &player, |player| player.set_speed(percent))
 }
 
 #[tauri::command]
 pub fn set_pitch(app: AppHandle, player: State<'_, SharedPlayer>, pitch: Pitch) -> Result<(), AppError> {
-    update_player(&app, &player, |player| {
-        player.set_pitch(pitch);
-        Ok(())
-    })
-}
-
-#[tauri::command]
-pub fn set_loop(
-    app: AppHandle,
-    player: State<'_, SharedPlayer>,
-    start_seconds: Option<f64>,
-    end_seconds: Option<f64>,
-) -> Result<(), AppError> {
-    update_player(&app, &player, |player| player.set_loop(start_seconds, end_seconds))
-}
-
-#[tauri::command]
-pub fn set_loop_enabled(app: AppHandle, player: State<'_, SharedPlayer>, is_enabled: bool) -> Result<(), AppError> {
-    update_player(&app, &player, |player| player.set_loop_enabled(is_enabled))
+    update_player(&app, &player, |player| player.set_pitch(pitch))
 }
 
 #[tauri::command]
@@ -136,16 +123,66 @@ pub fn set_preroll(app: AppHandle, player: State<'_, SharedPlayer>, seconds: f64
 
 #[tauri::command]
 pub fn set_trainer(app: AppHandle, player: State<'_, SharedPlayer>, trainer: Trainer) -> Result<(), AppError> {
+    update_player(&app, &player, |player| player.set_trainer(trainer))
+}
+
+#[tauri::command]
+pub fn set_loop_enabled(app: AppHandle, player: State<'_, SharedPlayer>, is_enabled: bool) -> Result<(), AppError> {
+    change_settings(&app, &player, |settings| settings.is_loop_enabled = is_enabled && settings.active_loop_id.is_some())
+}
+
+#[tauri::command]
+pub fn add_marker(app: AppHandle, player: State<'_, SharedPlayer>, seconds: f64) -> Result<u32, AppError> {
+    change_settings(&app, &player, |settings| settings.add_marker(seconds))
+}
+
+#[tauri::command]
+pub fn rename_marker(app: AppHandle, player: State<'_, SharedPlayer>, marker_id: u32, name: String) -> Result<(), AppError> {
+    change_settings(&app, &player, |settings| settings.rename_marker(marker_id, name))
+}
+
+#[tauri::command]
+pub fn delete_marker(app: AppHandle, player: State<'_, SharedPlayer>, marker_id: u32) -> Result<Vec<String>, AppError> {
+    change_settings(&app, &player, |settings| settings.delete_marker(marker_id))
+}
+
+#[tauri::command]
+pub fn create_loop(
+    app: AppHandle,
+    player: State<'_, SharedPlayer>,
+    start_marker_id: u32,
+    end_marker_id: u32,
+) -> Result<u32, AppError> {
     update_player(&app, &player, |player| {
-        player.set_trainer(trainer);
-        Ok(())
+        let loop_id = player
+            .change_settings(|settings| settings.add_loop(start_marker_id, end_marker_id))?
+            .ok_or(AppError::InvalidRequest("a loop's end marker must come after its start marker".into()))?;
+        player.seek_to_active_loop_start()?;
+        Ok(loop_id)
     })
 }
 
 #[tauri::command]
-pub fn set_markers(app: AppHandle, player: State<'_, SharedPlayer>, markers: Vec<Marker>) -> Result<(), AppError> {
-    update_player(&app, &player, |player| {
-        player.set_markers(markers);
-        Ok(())
-    })
+pub fn create_loop_from_range(
+    app: AppHandle,
+    player: State<'_, SharedPlayer>,
+    start_seconds: f64,
+    end_seconds: f64,
+) -> Result<u32, AppError> {
+    change_settings(&app, &player, |settings| settings.add_loop_from_range(start_seconds, end_seconds))
+}
+
+#[tauri::command]
+pub fn rename_loop(app: AppHandle, player: State<'_, SharedPlayer>, loop_id: u32, name: String) -> Result<(), AppError> {
+    change_settings(&app, &player, |settings| settings.rename_loop(loop_id, name))
+}
+
+#[tauri::command]
+pub fn delete_loop(app: AppHandle, player: State<'_, SharedPlayer>, loop_id: u32) -> Result<(), AppError> {
+    change_settings(&app, &player, |settings| settings.delete_loop(loop_id))
+}
+
+#[tauri::command]
+pub fn activate_loop(app: AppHandle, player: State<'_, SharedPlayer>, loop_id: Option<u32>) -> Result<(), AppError> {
+    update_player(&app, &player, |player| player.activate_loop(loop_id))
 }

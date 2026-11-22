@@ -1,4 +1,5 @@
 import { backend, onPlayerState, onPlayhead, type PlayerState, type Waveform } from './backend'
+import { currentSpeed } from './songModel'
 
 const MAX_EXTRAPOLATION_SECONDS = 0.1
 const MILLISECONDS_PER_SECOND = 1000
@@ -36,7 +37,7 @@ class Player {
   currentSeconds(): number {
     if (!this.state?.isPlaying) return this.reportedSeconds
     const elapsedSeconds = (performance.now() - this.reportedAt) / MILLISECONDS_PER_SECOND
-    const speedRatio = this.state.settings.speedPercent / NORMAL_SPEED_PERCENT
+    const speedRatio = currentSpeed(this.state.settings) / NORMAL_SPEED_PERCENT
     return this.reportedSeconds + Math.min(elapsedSeconds * speedRatio, MAX_EXTRAPOLATION_SECONDS)
   }
 

@@ -19,19 +19,19 @@ A change in pitch, in semitones and cents, made independently of speed.
 _Avoid_: Transpose, key change, detune
 
 **Loop**:
-A span of the song between an A point and a B point that plays repeatedly without a gap.
-_Avoid_: Repeat, cycle
+A named, saved span of the song from one marker to a later marker, which plays repeatedly without a gap and remembers its own speed. A song can have many loops; at most one is active.
+_Avoid_: Repeat, cycle, region, A–B
 
 **Pre-roll**:
-The stretch of audio just before the loop's A point, played as a lead-in each time the loop restarts.
+The stretch of audio just before the active loop's start marker, played as a lead-in each time the loop restarts.
 _Avoid_: Count-in, lead-in
 
 **Speed trainer**:
-A mode in which each repetition of the loop adds a fixed number of percentage points to the speed, until it reaches a target speed, where it stays.
+A mode in which each repetition of the active loop adds a fixed number of percentage points to the speed, until it reaches a target speed, where it stays.
 _Avoid_: Ramp, tempo trainer
 
 **Marker**:
-A named point in time within a song, such as "intro" or "solo".
+A named point in time within a song, such as "intro" or "solo". Loops are built from markers; deleting a marker deletes the loops that use it.
 _Avoid_: Section, cue, bookmark
 
 ### Isolation

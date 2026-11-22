@@ -1,124 +1,145 @@
-:root {
-  --background: #f6f5f2;
-  --surface: #ffffff;
-  --text: #1d1d1f;
-  --muted: #6b6b70;
-  --accent: #c2410c;
-  --border: #dedcd6;
-  --error: #b91c1c;
-  --waveform-background: #ecebe6;
-  --waveform-peak: #57534e;
-  --playhead: #c2410c;
-  --loop-fill: rgba(194, 65, 12, 0.18);
-  --marker: #2563eb;
-  color-scheme: light;
+@font-face {
+  font-family: 'Barlow Semi Condensed';
+  font-weight: 400;
+  src: url('./assets/fonts/barlow-semi-condensed-400.woff2') format('woff2');
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #17171a;
-    --surface: #222226;
-    --text: #ececef;
-    --muted: #9a9aa2;
-    --accent: #fb923c;
-    --border: #34343a;
-    --error: #f87171;
-    --waveform-background: #1f1f23;
-    --waveform-peak: #a8a29e;
-    --playhead: #fb923c;
-    --loop-fill: rgba(251, 146, 60, 0.2);
-    --marker: #60a5fa;
-    color-scheme: dark;
-  }
+@font-face {
+  font-family: 'Barlow Semi Condensed';
+  font-weight: 500;
+  src: url('./assets/fonts/barlow-semi-condensed-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Barlow Semi Condensed';
+  font-weight: 600;
+  src: url('./assets/fonts/barlow-semi-condensed-600.woff2') format('woff2');
+}
+
+:root {
+  --font: 'Barlow Semi Condensed', system-ui, sans-serif;
+  --bar-height: 40px;
+  --group-gap: 1px;
+  --dim-opacity: 0.45;
+  color-scheme: dark;
+}
+
+:root,
+:root[data-theme='ink-bronze'] {
+  --bg: #11141b;
+  --bar: #0c0e13;
+  --cell: #181c25;
+  --cell-hover: #20252f;
+  --text: #d9dde5;
+  --muted: #7d8594;
+  --accent: #c59a5f;
+  --accent-soft: rgba(197, 154, 95, 0.14);
+  --wave-bg: #0f1218;
+  --wave-peak: #343b49;
+  --overlay: rgba(4, 5, 8, 0.6);
+  --error: #e0806b;
+}
+
+:root[data-theme='petrol-moonlight'] {
+  --bg: #0f1b1d;
+  --bar: #0a1314;
+  --cell: #152427;
+  --cell-hover: #1c2e31;
+  --text: #dbe7e3;
+  --muted: #7f9894;
+  --accent: #cfe3dc;
+  --accent-soft: rgba(207, 227, 220, 0.12);
+  --wave-bg: #0d1719;
+  --wave-peak: #2c4346;
+  --overlay: rgba(3, 7, 8, 0.6);
+  --error: #e39a86;
+}
+
+:root[data-theme='aubergine-ember'] {
+  --bg: #191318;
+  --bar: #120d11;
+  --cell: #221a21;
+  --cell-hover: #2c222a;
+  --text: #eadfe5;
+  --muted: #94838d;
+  --accent: #e58a5c;
+  --accent-soft: rgba(229, 138, 92, 0.15);
+  --wave-bg: #160f14;
+  --wave-peak: #433340;
+  --overlay: rgba(8, 4, 7, 0.6);
+  --error: #f08f7a;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
-  background: var(--background);
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
   color: var(--text);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font);
   font-size: 14px;
 }
 
-main {
+#app,
+.app {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  height: 100%;
 }
 
-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+main {
+  flex: 1;
+  min-height: 0;
 }
 
-h1 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+button,
+select,
+input {
+  border: none;
+  border-radius: 0;
+  background: var(--cell);
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
 }
 
 button {
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled),
+select:hover {
+  background-color: var(--cell-hover);
+}
+
+select {
+  appearance: none;
+  padding-right: 28px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) 50%,
+    calc(100% - 10px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
   cursor: pointer;
 }
 
 button:disabled {
-  opacity: 0.5;
+  color: var(--muted);
   cursor: default;
 }
 
-.transport {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.error {
-  margin: 0;
-  color: var(--error);
-}
-
-.help {
-  margin-left: auto;
-}
-
-.panels {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
-}
-
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-}
-
-.panel header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.panel h2 {
-  margin: 0;
-  font-size: 15px;
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
 }

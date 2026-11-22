@@ -8,9 +8,7 @@ use crate::audio::output::{AudioOutput, DeviceEvent, start_audio_output};
 use crate::audio::renderer::EngineCommand;
 use crate::audio::transport::LoopRegion;
 use crate::error::AppError;
-use crate::song_settings::{
-    MAX_PREROLL_SECONDS, MAX_SPEED_PERCENT, MIN_SPEED_PERCENT, Marker, Pitch, SongSettings, Trainer,
-};
+use crate::song_settings::{MAX_PREROLL_SECONDS, MAX_SPEED_PERCENT, MIN_SPEED_PERCENT, Pitch, SongSettings, Trainer};
 
 pub struct LoadedSong {
     pub id: String,
@@ -123,48 +121,49 @@ impl Player {
         Ok(self.output.feedback.position_frame() as f64 / sample_rate as f64)
     }
 
-    pub fn set_speed(&mut self, percent: f64) {
-        self.settings.trainer.is_enabled = false;
-        self.apply_speed(percent);
-    }
-
-    pub fn set_pitch(&mut self, pitch: Pitch) {
-        self.settings.pitch = pitch.clamped();
-        self.output.send(EngineCommand::SetPitch(self.settings.pitch.total_semitones()));
-    }
-
-    pub fn set_loop(&mut self, start_seconds: Option<f64>, end_seconds: Option<f64>) -> Result<(), AppError> {
+    pub fn change_settings<R>(&mut self, change: impl FnOnce(&mut SongSettings) -> R) -> Result<R, AppError> {
         self.require_song()?;
-        self.settings.loop_start_seconds = start_seconds;
-        self.settings.loop_end_seconds = end_seconds;
-        self.settings.trainer.is_enabled = false;
-        if start_seconds.is_some() && end_seconds.is_some() {
-            self.settings.is_loop_enabled = true;
-        }
-        self.send_loop()
+        let result = change(&mut self.settings);
+        self.send_all_settings();
+        Ok(result)
     }
 
-    pub fn set_loop_enabled(&mut self, is_enabled: bool) -> Result<(), AppError> {
-        self.settings.is_loop_enabled = is_enabled;
-        self.send_loop()
+    pub fn set_speed(&mut self, percent: f64) -> Result<(), AppError> {
+        self.change_settings(|settings| {
+            settings.trainer.is_enabled = false;
+            settings.set_current_speed(percent);
+        })
+    }
+
+    pub fn set_pitch(&mut self, pitch: Pitch) -> Result<(), AppError> {
+        self.change_settings(|settings| settings.pitch = pitch.clamped())
     }
 
     pub fn set_preroll(&mut self, seconds: f64) -> Result<(), AppError> {
-        self.settings.preroll_seconds = seconds.clamp(0.0, MAX_PREROLL_SECONDS);
-        self.send_preroll()
+        self.change_settings(|settings| settings.preroll_seconds = seconds.clamp(0.0, MAX_PREROLL_SECONDS))
     }
 
-    pub fn set_trainer(&mut self, trainer: Trainer) {
-        self.settings.trainer = Trainer {
-            step_percent: trainer.step_percent.max(0.0),
-            target_percent: trainer.target_percent.clamp(MIN_SPEED_PERCENT, MAX_SPEED_PERCENT),
-            ..trainer
-        };
+    pub fn set_trainer(&mut self, trainer: Trainer) -> Result<(), AppError> {
+        self.change_settings(|settings| {
+            settings.trainer = Trainer {
+                step_percent: trainer.step_percent.max(0.0),
+                target_percent: trainer.target_percent.clamp(MIN_SPEED_PERCENT, MAX_SPEED_PERCENT),
+                ..trainer
+            }
+        })
     }
 
-    pub fn set_markers(&mut self, mut markers: Vec<Marker>) {
-        markers.sort_by(|left, right| left.seconds.total_cmp(&right.seconds));
-        self.settings.markers = markers;
+    pub fn activate_loop(&mut self, loop_id: Option<u32>) -> Result<(), AppError> {
+        self.change_settings(|settings| settings.activate_loop(loop_id))?;
+        self.seek_to_active_loop_start()
+    }
+
+    pub fn seek_to_active_loop_start(&mut self) -> Result<(), AppError> {
+        let start_seconds = self.settings.active_loop().and_then(|active| self.settings.loop_seconds(active));
+        match start_seconds {
+            Some((start, _)) => self.seek(start),
+            None => Ok(()),
+        }
     }
 
     pub fn sync_with_engine(&mut self) -> EngineSync {
@@ -193,18 +192,14 @@ impl Player {
             return false;
         }
         let trainer = self.settings.trainer;
-        let next_speed = (0..new_loops).fold(self.settings.speed_percent, |speed, _| trainer.next_speed(speed));
-        self.apply_speed(next_speed);
+        let next_speed = (0..new_loops).fold(self.settings.current_speed(), |speed, _| trainer.next_speed(speed));
+        self.settings.set_current_speed(next_speed);
+        self.output.send(EngineCommand::SetSpeed(self.settings.current_speed()));
         true
     }
 
-    fn apply_speed(&mut self, percent: f64) {
-        self.settings.speed_percent = percent.clamp(MIN_SPEED_PERCENT, MAX_SPEED_PERCENT);
-        self.output.send(EngineCommand::SetSpeed(self.settings.speed_percent));
-    }
-
     fn send_all_settings(&mut self) {
-        self.output.send(EngineCommand::SetSpeed(self.settings.speed_percent));
+        self.output.send(EngineCommand::SetSpeed(self.settings.current_speed()));
         self.output.send(EngineCommand::SetPitch(self.settings.pitch.total_semitones()));
         if let Err(error) = self.send_loop().and_then(|_| self.send_preroll()) {
             log::error!("could not apply song settings: {error}");
@@ -212,7 +207,7 @@ impl Player {
     }
 
     fn send_loop(&self) -> Result<(), AppError> {
-        let region = match self.settings.active_loop_seconds() {
+        let region = match self.settings.looping_seconds() {
             Some((start, end)) => Some(LoopRegion {
                 start_frame: self.seconds_to_frame(start)?,
                 end_frame: self.seconds_to_frame(end)?,

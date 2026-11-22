@@ -54,7 +54,6 @@ impl SettingsStore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::song_settings::Marker;
 
     fn temporary_store(test_name: &str) -> SettingsStore {
         let directory = std::env::temp_dir().join(format!("rusty-riffs-test-{test_name}-{}", std::process::id()));
@@ -71,14 +70,9 @@ mod tests {
     #[test]
     fn saved_settings_load_back_unchanged() {
         let store = temporary_store("round-trip");
-        let settings = SongSettings {
-            speed_percent: 65.0,
-            loop_start_seconds: Some(12.5),
-            loop_end_seconds: Some(20.0),
-            is_loop_enabled: true,
-            markers: vec![Marker { name: "solo".into(), seconds: 95.0 }],
-            ..Default::default()
-        };
+        let mut settings = SongSettings { song_speed_percent: 65.0, ..Default::default() };
+        settings.add_marker(95.0);
+        settings.add_loop_from_range(12.5, 20.0);
         store.save("abc", &settings).unwrap();
         assert_eq!(store.load("abc").unwrap(), Some(settings));
     }
