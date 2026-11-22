@@ -3,6 +3,7 @@ mod commands;
 mod engine_sync;
 mod error;
 mod player;
+mod settings_store;
 mod song_loader;
 mod song_settings;
 
@@ -12,6 +13,9 @@ use std::sync::mpsc;
 use tauri::Manager;
 
 use crate::player::Player;
+use crate::settings_store::SettingsStore;
+
+const SONG_SETTINGS_DIRECTORY: &str = "songs";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,6 +26,8 @@ pub fn run() {
                 app.handle()
                     .plugin(tauri_plugin_log::Builder::default().level(log::LevelFilter::Info).build())?;
             }
+            let settings_directory = app.path().app_data_dir()?.join(SONG_SETTINGS_DIRECTORY);
+            app.manage(SettingsStore::new(settings_directory));
             let (device_event_sender, device_event_receiver) = mpsc::channel();
             app.manage(Mutex::new(Player::new(device_event_sender)?));
             engine_sync::spawn_playhead_updates(app.handle().clone());
