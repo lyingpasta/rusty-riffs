@@ -28,8 +28,8 @@ Nearly every key is under the right hand (thumb on Space), so you can drive the 
 |---|---|
 | `O` | Open a song |
 | `Space` | Play / pause |
-| `h` / `l` | Nudge −1 s / +1 s |
-| `H` / `L` | Nudge −5 s / +5 s |
+| `h` / `l` | Nudge back / forward: about 1/50 of the visible width (0.05–1 s) |
+| `H` / `L` | Nudge 5× further |
 | `0` | Jump to loop start (or song start) |
 | `j` / `k` | Speed −5% / +5% |
 | `m` | Add marker at playhead |
@@ -37,7 +37,7 @@ Nearly every key is under the right hand (thumb on Space), so you can drive the 
 | `i` | Rename marker at playhead |
 | `d` | Delete marker at playhead (and the loops that use it) |
 | `v` | Start a selection at the playhead |
-| `h` / `l`, `H` / `L` (selection) | Move the selection end ±1 s / ±5 s |
+| `h` / `l`, `H` / `L` (selection) | Move the selection end by the same steps |
 | `,` / `.` (selection) | Snap the selection end to the previous / next marker |
 | `Enter` (selection) | Make a loop from the selection |
 | `d` (selection) | Delete every marker in the selection |

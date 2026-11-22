@@ -1,5 +1,5 @@
 import { actions } from './actions'
-import { requestZoom } from './waveformZoom'
+import { requestZoom } from './waveformViewport'
 import type { Mode } from './interaction.svelte'
 
 export type ShortcutMode = Mode['kind'] | 'any'
@@ -18,8 +18,8 @@ const TEXT_INPUT_TYPES = new Set(['text', 'number', 'search'])
 export const shortcuts: Shortcut[] = [
   { group: 'Playback', mode: 'normal', keys: ['O'], label: 'O', description: 'Open a song', run: actions.openSong },
   { group: 'Playback', mode: 'any', keys: [' '], label: 'Space', description: 'Play / pause', run: actions.togglePlaying },
-  { group: 'Playback', mode: 'any', keys: ['h', 'l'], label: 'h / l', description: 'Nudge −1 s / +1 s', run: (event) => actions.nudge(event.key === 'l' ? 1 : -1, false) },
-  { group: 'Playback', mode: 'any', keys: ['H', 'L'], label: 'H / L', description: 'Nudge −5 s / +5 s', run: (event) => actions.nudge(event.key === 'L' ? 1 : -1, true) },
+  { group: 'Playback', mode: 'any', keys: ['h', 'l'], label: 'h / l', description: 'Nudge back / forward (finer when zoomed in)', run: (event) => actions.nudge(event.key === 'l' ? 1 : -1, false) },
+  { group: 'Playback', mode: 'any', keys: ['H', 'L'], label: 'H / L', description: 'Nudge back / forward 5× further', run: (event) => actions.nudge(event.key === 'L' ? 1 : -1, true) },
   { group: 'Playback', mode: 'normal', keys: ['0'], label: '0', description: 'Jump to loop start (or song start)', run: actions.jumpToStart },
   { group: 'Speed', mode: 'any', keys: ['j', 'k'], label: 'j / k', description: 'Speed −5% / +5%', run: (event) => actions.changeSpeed(event.key === 'k' ? 1 : -1) },
   { group: 'Markers', mode: 'normal', keys: ['m'], label: 'm', description: 'Add marker at playhead', run: actions.addMarker },
@@ -27,8 +27,8 @@ export const shortcuts: Shortcut[] = [
   { group: 'Markers', mode: 'normal', keys: ['i'], label: 'i', description: 'Rename marker at playhead', run: actions.renameMarkerAtPlayhead },
   { group: 'Markers', mode: 'normal', keys: ['d'], label: 'd', description: 'Delete marker at playhead (and its loops)', run: actions.deleteMarkerAtPlayhead },
   { group: 'Selection', mode: 'normal', keys: ['v'], label: 'v', description: 'Start a selection at the playhead', run: actions.startSelection },
-  { group: 'Selection', mode: 'selection', keys: ['h', 'l'], label: 'h / l', description: 'Move the selection end −1 s / +1 s', run: (event) => actions.moveSelectionEnd(event.key === 'l' ? 1 : -1) },
-  { group: 'Selection', mode: 'selection', keys: ['H', 'L'], label: 'H / L', description: 'Move the selection end −5 s / +5 s', run: (event) => actions.moveSelectionEnd(event.key === 'L' ? 5 : -5) },
+  { group: 'Selection', mode: 'selection', keys: ['h', 'l'], label: 'h / l', description: 'Move the selection end back / forward', run: (event) => actions.moveSelectionEnd(event.key === 'l' ? 1 : -1, false) },
+  { group: 'Selection', mode: 'selection', keys: ['H', 'L'], label: 'H / L', description: 'Move the selection end 5× further', run: (event) => actions.moveSelectionEnd(event.key === 'L' ? 1 : -1, true) },
   { group: 'Selection', mode: 'selection', keys: [',', '.'], label: ', / .', description: 'Snap the selection end to the previous / next marker', run: (event) => actions.snapSelectionEnd(event.key === '.' ? 1 : -1) },
   { group: 'Selection', mode: 'selection', keys: ['Enter'], label: 'Enter', description: 'Make a loop from the selection', run: actions.loopSelection },
   { group: 'Selection', mode: 'selection', keys: ['d'], label: 'd', description: 'Delete every marker in the selection', run: actions.deleteMarkersInSelection },

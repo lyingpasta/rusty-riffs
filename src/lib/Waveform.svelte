@@ -5,13 +5,14 @@
   import { interaction } from './interaction.svelte'
   import { player } from './player.svelte'
   import { assignLanes, loopSpans, markerById } from './songModel'
-  import { handleZoomRequests } from './waveformZoom'
+  import { handleZoomRequests, provideVisibleSeconds } from './waveformViewport'
   import {
     clampView,
     easeTowards,
     fitPixelsPerSecond,
     followPlayhead,
     secondsToX,
+    visibleSeconds,
     xToSeconds,
     zoomAround,
     type WaveformView,
@@ -349,6 +350,7 @@
 
   onMount(() => {
     const stopHandlingZoom = handleZoomRequests(zoomAroundPlayhead)
+    const stopProvidingVisibleSeconds = provideVisibleSeconds(() => visibleSeconds(view))
     const observer = new ResizeObserver(resizeCanvas)
     observer.observe(canvas)
     let animationFrame = requestAnimationFrame(function loop() {
@@ -357,6 +359,7 @@
     })
     return () => {
       stopHandlingZoom()
+      stopProvidingVisibleSeconds()
       observer.disconnect()
       cancelAnimationFrame(animationFrame)
     }

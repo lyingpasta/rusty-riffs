@@ -5,13 +5,15 @@ import { applyTheme, nextTheme } from './theme'
 import { nearestAttackSeconds } from './attacks'
 import { timing } from './timing.svelte'
 import { pickSongFile } from './songPicker'
+import { visibleSecondsOnScreen } from './waveformViewport'
 import { activeLoop, currentSpeed, markerAtOrBefore, markerById, neighbourLoop, neighbourMarker } from './songModel'
 
 const SPEED_STEP_PERCENT = 5
 const PITCH_STEP_SEMITONES = 1
 const CENTS_STEP = 5
-const SMALL_NUDGE_SECONDS = 1
-const LARGE_NUDGE_SECONDS = 5
+const NICE_STEPS_SECONDS = [0.05, 0.1, 0.25, 0.5, 1]
+const STEPS_PER_VISIBLE_WIDTH = 50
+const LARGE_STEP_FACTOR = 5
 const REWIND_GRACE_SECONDS = 1
 const PREROLL_CHOICES_SECONDS = [0, 1, 2]
 
@@ -48,6 +50,14 @@ function markingSeconds(settings: SongSettings): number {
   const seconds = heardSeconds(settings)
   if (!timing.isSnapEnabled || !player.waveform) return seconds
   return nearestAttackSeconds(player.waveform, seconds) ?? seconds
+}
+
+function nudgeStepSeconds(isLarge: boolean): number {
+  const visibleSeconds = visibleSecondsOnScreen()
+  const largestStep = NICE_STEPS_SECONDS[NICE_STEPS_SECONDS.length - 1]
+  const idealStep = visibleSeconds === null ? largestStep : visibleSeconds / STEPS_PER_VISIBLE_WIDTH
+  const step = NICE_STEPS_SECONDS.find((candidate) => candidate >= idealStep) ?? largestStep
+  return isLarge ? step * LARGE_STEP_FACTOR : step
 }
 
 let pendingNudgeSeconds = 0
@@ -107,8 +117,7 @@ export const actions = {
     withSettings(() => player.run(() => backend.setPitch({ semitones: 0, cents: 0 })))
   },
   nudge(direction: 1 | -1, isLarge: boolean): void {
-    const seconds = isLarge ? LARGE_NUDGE_SECONDS : SMALL_NUDGE_SECONDS
-    withSettings(() => queueNudge(direction * seconds))
+    withSettings(() => queueNudge(direction * nudgeStepSeconds(isLarge)))
   },
   jumpToStart(): void {
     withSettings((settings) => {
@@ -183,11 +192,11 @@ export const actions = {
   selectRange(anchorSeconds: number, endSeconds: number): void {
     interaction.mode = { kind: 'selection', anchorSeconds, endSeconds }
   },
-  moveSelectionEnd(deltaSeconds: number): void {
+  moveSelectionEnd(direction: 1 | -1, isLarge: boolean): void {
     const mode = interaction.mode
     if (mode.kind !== 'selection') return
     const duration = player.state?.song?.durationSeconds ?? 0
-    const endSeconds = Math.min(Math.max(mode.endSeconds + deltaSeconds, 0), duration)
+    const endSeconds = Math.min(Math.max(mode.endSeconds + direction * nudgeStepSeconds(isLarge), 0), duration)
     interaction.mode = { ...mode, endSeconds }
   },
   snapSelectionEnd(direction: 1 | -1): void {
