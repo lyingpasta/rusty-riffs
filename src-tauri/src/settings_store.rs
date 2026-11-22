@@ -1,6 +1,7 @@
 use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use crate::error::AppError;
 use crate::song_settings::SongSettings;
@@ -11,11 +12,23 @@ const TEMPORARY_EXTENSION: &str = "json.tmp";
 
 pub struct SettingsStore {
     directory: PathBuf,
+    last_saved: Mutex<Option<(String, SongSettings)>>,
 }
 
 impl SettingsStore {
     pub fn new(directory: PathBuf) -> Self {
-        SettingsStore { directory }
+        SettingsStore { directory, last_saved: Mutex::new(None) }
+    }
+
+    pub fn save_if_changed(&self, song_id: &str, settings: &SongSettings) -> Result<bool, AppError> {
+        let mut last_saved = self.last_saved.lock().expect("settings store lock poisoned");
+        let is_unchanged = last_saved.as_ref().is_some_and(|(id, saved)| id == song_id && saved == settings);
+        if is_unchanged {
+            return Ok(false);
+        }
+        self.save(song_id, settings)?;
+        *last_saved = Some((song_id.to_string(), settings.clone()));
+        Ok(true)
     }
 
     pub fn load(&self, song_id: &str) -> Result<Option<SongSettings>, AppError> {
@@ -75,6 +88,16 @@ mod tests {
         settings.add_loop_from_range(12.5, 20.0);
         store.save("abc", &settings).unwrap();
         assert_eq!(store.load("abc").unwrap(), Some(settings));
+    }
+
+    #[test]
+    fn unchanged_settings_are_not_written_again() {
+        let store = temporary_store("unchanged");
+        let mut settings = SongSettings::default();
+        assert!(store.save_if_changed("abc", &settings).unwrap());
+        assert!(!store.save_if_changed("abc", &settings).unwrap());
+        settings.song_speed_percent = 80.0;
+        assert!(store.save_if_changed("abc", &settings).unwrap());
     }
 
     #[test]

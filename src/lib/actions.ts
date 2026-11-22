@@ -50,6 +50,27 @@ function markingSeconds(settings: SongSettings): number {
   return nearestAttackSeconds(player.waveform, seconds) ?? seconds
 }
 
+let pendingNudgeSeconds = 0
+let isNudgeInFlight = false
+
+function queueNudge(deltaSeconds: number): void {
+  pendingNudgeSeconds += deltaSeconds
+  if (!isNudgeInFlight) sendPendingNudge()
+}
+
+function sendPendingNudge(): void {
+  const deltaSeconds = pendingNudgeSeconds
+  pendingNudgeSeconds = 0
+  isNudgeInFlight = true
+  backend
+    .seekBy(deltaSeconds)
+    .catch((error) => (player.error = String(error)))
+    .finally(() => {
+      isNudgeInFlight = false
+      if (pendingNudgeSeconds !== 0) sendPendingNudge()
+    })
+}
+
 function seek(seconds: number): void {
   player.run(() => backend.seek(seconds))
 }
@@ -87,7 +108,7 @@ export const actions = {
   },
   nudge(direction: 1 | -1, isLarge: boolean): void {
     const seconds = isLarge ? LARGE_NUDGE_SECONDS : SMALL_NUDGE_SECONDS
-    withSettings(() => player.run(() => backend.seekBy(direction * seconds)))
+    withSettings(() => queueNudge(direction * seconds))
   },
   jumpToStart(): void {
     withSettings((settings) => {

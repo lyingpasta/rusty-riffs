@@ -175,18 +175,22 @@
     if (!waveform) return
     const middle = (area.top + area.bottom) / 2
     const maxHalfHeight = (area.bottom - area.top) / 2
-    const quietPeak = color('--wave-peak')
-    const focusedPeak = color('--accent')
+    const quietColumns = new Path2D()
+    const focusedColumns = new Path2D()
     for (let x = 0; x < view.widthPixels; x++) {
       const seconds = xToSeconds(view, x)
       const isFocused = selection !== null && seconds >= selection.seconds[0] && seconds <= selection.seconds[1]
       const firstPeak = Math.floor(seconds * waveform.peaksPerSecond)
       const lastPeak = Math.max(Math.floor(xToSeconds(view, x + 1) * waveform.peaksPerSecond), firstPeak + 1)
       const halfHeight = Math.max(loudestPeak(waveform.peaks, firstPeak, lastPeak) * maxHalfHeight, 0.5)
-      context.fillStyle = isFocused ? focusedPeak : quietPeak
-      context.globalAlpha = isFocused ? FOCUSED_PEAK_ALPHA : 1
-      context.fillRect(x, middle - halfHeight, 1, halfHeight * 2)
+      const columns = isFocused ? focusedColumns : quietColumns
+      columns.rect(x, middle - halfHeight, 1, halfHeight * 2)
     }
+    context.fillStyle = color('--wave-peak')
+    context.fill(quietColumns)
+    context.fillStyle = color('--accent')
+    context.globalAlpha = FOCUSED_PEAK_ALPHA
+    context.fill(focusedColumns)
     context.globalAlpha = 1
   }
 

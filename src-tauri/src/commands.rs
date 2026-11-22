@@ -34,7 +34,7 @@ fn save_song_settings(app: &AppHandle, player: &Player) {
     let Some(song) = player.loaded_song() else {
         return;
     };
-    if let Err(error) = app.state::<SettingsStore>().save(&song.id, player.settings()) {
+    if let Err(error) = app.state::<SettingsStore>().save_if_changed(&song.id, player.settings()) {
         log::error!("{error}");
     }
 }
