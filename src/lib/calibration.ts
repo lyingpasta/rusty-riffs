@@ -1,10 +1,13 @@
-const CLICK_COUNT = 16
-const WARM_UP_CLICKS = 4
-const CLICK_INTERVAL_SECONDS = 0.6
+export const CLICK_COUNT = 12
+export const WARM_UP_CLICKS = 2
+const SHORTEST_GAP_SECONDS = 0.8
+const LONGEST_GAP_SECONDS = 2
+const LAST_CLICK_TAIL_SECONDS = 0.8
 const LEAD_IN_SECONDS = 0.8
 const CLICK_FREQUENCY_HERTZ = 1500
 const CLICK_DURATION_SECONDS = 0.03
-const MATCH_WINDOW_SECONDS = 0.3
+const EARLIEST_TAP_SECONDS = -0.1
+const LATEST_TAP_SECONDS = 0.6
 const MINIMUM_MATCHED_TAPS = 6
 const MILLISECONDS_PER_SECOND = 1000
 const MAX_TIMESTAMP_DISAGREEMENT_SECONDS = 0.5
@@ -20,10 +23,9 @@ export interface CalibrationSession {
 
 export function startCalibration(): CalibrationSession {
   const audio = new AudioContext()
-  const firstClickTime = audio.currentTime + LEAD_IN_SECONDS
-  const clickTimes = Array.from({ length: CLICK_COUNT }, (_, index) => firstClickTime + index * CLICK_INTERVAL_SECONDS)
+  const clickTimes = randomClickTimes(audio.currentTime + LEAD_IN_SECONDS)
   clickTimes.forEach((time) => scheduleClick(audio, time))
-  const endTime = clickTimes[clickTimes.length - 1] + CLICK_INTERVAL_SECONDS
+  const endTime = clickTimes[clickTimes.length - 1] + LAST_CLICK_TAIL_SECONDS
   keepOutputRunning(audio, endTime)
   const taps: number[] = []
   return {
@@ -45,9 +47,10 @@ export interface CalibrationResult {
 export function measureOffset(clickTimes: number[], taps: number[]): CalibrationResult {
   const countedClicks = clickTimes.slice(WARM_UP_CLICKS)
   const offsets = taps.flatMap((tap) => {
-    const nearest = countedClicks.reduce((best, click) => (Math.abs(click - tap) < Math.abs(best - tap) ? click : best))
-    const offset = tap - nearest
-    return Math.abs(offset) <= MATCH_WINDOW_SECONDS ? [offset] : []
+    const offset = countedClicks
+      .map((click) => tap - click)
+      .find((candidate) => candidate >= EARLIEST_TAP_SECONDS && candidate <= LATEST_TAP_SECONDS)
+    return offset === undefined ? [] : [offset]
   })
   const hasEnoughTaps = offsets.length >= MINIMUM_MATCHED_TAPS
   return {
@@ -55,6 +58,15 @@ export function measureOffset(clickTimes: number[], taps: number[]): Calibration
     matchedTapCount: offsets.length,
     offsetMilliseconds: hasEnoughTaps ? median(offsets) * MILLISECONDS_PER_SECOND : null,
   }
+}
+
+function randomClickTimes(firstClickTime: number): number[] {
+  const times = [firstClickTime]
+  while (times.length < CLICK_COUNT) {
+    const gap = SHORTEST_GAP_SECONDS + Math.random() * (LONGEST_GAP_SECONDS - SHORTEST_GAP_SECONDS)
+    times.push(times[times.length - 1] + gap)
+  }
+  return times
 }
 
 function median(values: number[]): number {

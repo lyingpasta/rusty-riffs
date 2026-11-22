@@ -1,6 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { measureOffset, startCalibration, type CalibrationResult, type CalibrationSession } from './calibration'
+  import {
+    CLICK_COUNT,
+    WARM_UP_CLICKS,
+    measureOffset,
+    startCalibration,
+    type CalibrationResult,
+    type CalibrationSession,
+  } from './calibration'
   import { interaction } from './interaction.svelte'
   import { timing } from './timing.svelte'
 
@@ -61,7 +68,7 @@
 
   function describe(offset: number): string {
     const rounded = Math.round(Math.abs(offset))
-    return offset >= 0 ? `You tap ${rounded} ms after the click.` : `You tap ${rounded} ms ahead of the click.`
+    return offset >= 0 ? `You react ${rounded} ms after the click.` : `You pressed ${rounded} ms before the click on average.`
   }
 
   onMount(() => {
@@ -83,20 +90,23 @@
   <div class="dialog" role="dialog" aria-modal="true" aria-label="Timing calibration" tabindex="-1" use:takeFocus>
     <h2>Timing calibration</h2>
     {#if phase.kind === 'tapping'}
-      <p>Press Space along with each click, the way you'd press m on a note you hear. The first four clicks are a warm-up.</p>
+      <p>
+        Press Space as soon as you hear each click. They come at random moments, so react rather than predict, the way
+        you'd press m on a note you're listening for. The first {WARM_UP_CLICKS} clicks are a warm-up.
+      </p>
       <p class="tap-count" class:flash={isFlashing} aria-live="polite">
         {tapCount === 0 ? 'Waiting for your first tap…' : `${tapCount} ${tapCount === 1 ? 'tap' : 'taps'}`}
       </p>
-      <div class="clicks" aria-label="{phase.clicksHeard} of 16 clicks">
-        {#each { length: 16 } as _, index (index)}
-          <span class="click" class:heard={index < phase.clicksHeard} class:warm-up={index < 4}></span>
+      <div class="clicks" aria-label="{phase.clicksHeard} of {CLICK_COUNT} clicks">
+        {#each { length: CLICK_COUNT } as _, index (index)}
+          <span class="click" class:heard={index < phase.clicksHeard} class:warm-up={index < WARM_UP_CLICKS}></span>
         {/each}
       </div>
       <div class="actions"><button onclick={close}>Cancel</button></div>
     {:else if phase.result.offsetMilliseconds === null}
       <p>
         Not enough taps landed near the clicks: {phase.result.matchedTapCount} of your {phase.result.tapCount} taps were
-        within 0.3 s of a click after the warm-up, and 6 are needed. Try again, pressing Space on every click.
+        within 0.6 s after a click (warm-up excluded), and 6 are needed. Try again, pressing Space on every click.
       </p>
       <div class="actions">
         <button onclick={close}>Cancel</button>

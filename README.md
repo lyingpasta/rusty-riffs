@@ -67,7 +67,7 @@ Pitch, fine tuning and timing are set from the top bar. Hover any control to see
 When you press `m` or `v` while the song plays, you're reacting to something you already heard. The app moves the point back to the moment you heard it:
 
 1. The audio system's own delay is measured automatically, so the playhead shows what you're hearing.
-2. Your personal timing offset is subtracted. Its default is 150 ms. Click the target icon in the top bar to calibrate it: tap Space along with 16 clicks. It's in real time, so at 50% speed it covers half as much of the song.
+2. Your personal timing offset is subtracted. Its default is 150 ms. Click the target icon in the top bar to calibrate it: press Space as soon as you hear each of 12 clicks, which come at random moments so you react rather than anticipate. It's in real time, so at 50% speed it covers half as much of the song.
 3. With snapping on (the magnet icon), the point then moves to the nearest note attack within ±80 ms.
 
 ## Setup
