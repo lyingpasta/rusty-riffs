@@ -61,6 +61,7 @@ pub struct Renderer {
     stretch: Stretch,
     device_sample_rate: u32,
     device_latency_frames: usize,
+    song_frames_since_seek: usize,
     is_playing: bool,
     speed_percent: f64,
     pitch_semitones: f64,
@@ -77,6 +78,7 @@ impl Renderer {
             stretch: Stretch::preset_default(STEREO_CHANNELS as u32, device_sample_rate),
             device_sample_rate,
             device_latency_frames: 0,
+            song_frames_since_seek: 0,
             is_playing: false,
             speed_percent: NORMAL_SPEED_PERCENT,
             pitch_semitones: 0.0,
@@ -113,7 +115,9 @@ impl Renderer {
         let pending_output_frames = (self.device_latency_frames + self.stretch.output_latency()) as f64;
         let song_frames_per_output_frame = self.speed_percent / NORMAL_SPEED_PERCENT * song.sample_rate as f64
             / self.device_sample_rate as f64;
-        self.stretch.input_latency() + (pending_output_frames * song_frames_per_output_frame).round() as usize
+        let pipeline_latency =
+            self.stretch.input_latency() + (pending_output_frames * song_frames_per_output_frame).round() as usize;
+        pipeline_latency.min(self.song_frames_since_seek)
     }
 
     pub fn render(&mut self, output: &mut [f32]) {
@@ -124,6 +128,7 @@ impl Renderer {
         let input_frames = self.take_input_frame_count(output.len() / STEREO_CHANNELS, song.sample_rate);
         self.input_buffer.resize(input_frames * STEREO_CHANNELS, 0.0);
         let outcome = self.transport.read(&song.stereo_samples, &mut self.input_buffer);
+        self.song_frames_since_seek += input_frames;
         self.stretch.process(&self.input_buffer, &mut *output);
         if outcome.reached_end {
             self.is_playing = false;
@@ -137,12 +142,14 @@ impl Renderer {
         self.is_playing = false;
         self.transport = Transport::default();
         self.stretch.reset();
+        self.song_frames_since_seek = 0;
         self.apply_transpose();
     }
 
     fn seek(&mut self, frame: usize) {
         self.transport.seek(frame);
         self.stretch.reset();
+        self.song_frames_since_seek = 0;
     }
 
     fn set_pitch(&mut self, semitones: f64) {
@@ -260,6 +267,18 @@ mod tests {
         let expected_lag = renderer.stretch.input_latency() + pending_output_frames / 2;
         let lag = renderer.transport.position() - renderer.feedback.position_frame();
         assert!(lag.abs_diff(expected_lag) <= 1, "lag {lag}, expected {expected_lag}");
+    }
+
+    #[test]
+    fn position_is_the_seek_target_until_audio_has_flowed() {
+        let mut renderer = playing_renderer(SAMPLE_RATE, sine_song(440.0, 4.0));
+        renderer.set_device_latency_frames(2205);
+        render_seconds(&mut renderer, SAMPLE_RATE, 1.0);
+        renderer.apply(EngineCommand::Seek(44_100));
+        assert_eq!(renderer.feedback.position_frame(), 44_100);
+        renderer.apply(EngineCommand::Pause);
+        render_seconds(&mut renderer, SAMPLE_RATE, 0.5);
+        assert_eq!(renderer.feedback.position_frame(), 44_100);
     }
 
     #[test]
