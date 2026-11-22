@@ -7,13 +7,14 @@ const CLICK_DURATION_SECONDS = 0.03
 const MATCH_WINDOW_SECONDS = 0.3
 const MINIMUM_MATCHED_TAPS = 6
 const MILLISECONDS_PER_SECOND = 1000
+const MAX_TIMESTAMP_DISAGREEMENT_SECONDS = 0.5
 
 export interface CalibrationSession {
   clickTimes: number[]
   taps: number[]
-  endTime: number
   tap: () => void
-  heardTime: () => number
+  clicksPlayed: () => number
+  isFinished: () => boolean
   stop: () => void
 }
 
@@ -22,27 +23,38 @@ export function startCalibration(): CalibrationSession {
   const firstClickTime = audio.currentTime + LEAD_IN_SECONDS
   const clickTimes = Array.from({ length: CLICK_COUNT }, (_, index) => firstClickTime + index * CLICK_INTERVAL_SECONDS)
   clickTimes.forEach((time) => scheduleClick(audio, time))
+  const endTime = clickTimes[clickTimes.length - 1] + CLICK_INTERVAL_SECONDS
+  keepOutputRunning(audio, endTime)
   const taps: number[] = []
-  const heardTime = () => heardAudioTime(audio)
   return {
     clickTimes,
     taps,
-    endTime: clickTimes[clickTimes.length - 1] + CLICK_INTERVAL_SECONDS,
-    tap: () => void taps.push(heardTime()),
-    heardTime,
+    tap: () => void taps.push(heardAudioTime(audio)),
+    clicksPlayed: () => clickTimes.filter((time) => time <= audio.currentTime).length,
+    isFinished: () => audio.currentTime >= endTime,
     stop: () => void audio.close(),
   }
 }
 
-export function measuredOffsetMilliseconds(clickTimes: number[], taps: number[]): number | null {
+export interface CalibrationResult {
+  tapCount: number
+  matchedTapCount: number
+  offsetMilliseconds: number | null
+}
+
+export function measureOffset(clickTimes: number[], taps: number[]): CalibrationResult {
   const countedClicks = clickTimes.slice(WARM_UP_CLICKS)
   const offsets = taps.flatMap((tap) => {
     const nearest = countedClicks.reduce((best, click) => (Math.abs(click - tap) < Math.abs(best - tap) ? click : best))
     const offset = tap - nearest
     return Math.abs(offset) <= MATCH_WINDOW_SECONDS ? [offset] : []
   })
-  if (offsets.length < MINIMUM_MATCHED_TAPS) return null
-  return median(offsets) * MILLISECONDS_PER_SECOND
+  const hasEnoughTaps = offsets.length >= MINIMUM_MATCHED_TAPS
+  return {
+    tapCount: taps.length,
+    matchedTapCount: offsets.length,
+    offsetMilliseconds: hasEnoughTaps ? median(offsets) * MILLISECONDS_PER_SECOND : null,
+  }
 }
 
 function median(values: number[]): number {
@@ -52,13 +64,25 @@ function median(values: number[]): number {
 }
 
 function heardAudioTime(audio: AudioContext): number {
-  if (typeof audio.getOutputTimestamp === 'function') {
-    const stamp = audio.getOutputTimestamp()
-    if (stamp.contextTime !== undefined && stamp.performanceTime !== undefined) {
-      return stamp.contextTime + (performance.now() - stamp.performanceTime) / MILLISECONDS_PER_SECOND
-    }
-  }
-  return audio.currentTime - (audio.outputLatency ?? 0) - audio.baseLatency
+  const fallback = audio.currentTime - (audio.outputLatency ?? 0) - (audio.baseLatency ?? 0)
+  const stamped = timeFromOutputTimestamp(audio)
+  if (stamped === null || Math.abs(stamped - fallback) > MAX_TIMESTAMP_DISAGREEMENT_SECONDS) return fallback
+  return stamped
+}
+
+function timeFromOutputTimestamp(audio: AudioContext): number | null {
+  if (typeof audio.getOutputTimestamp !== 'function') return null
+  const stamp = audio.getOutputTimestamp()
+  if (!stamp.contextTime || !stamp.performanceTime) return null
+  return stamp.contextTime + (performance.now() - stamp.performanceTime) / MILLISECONDS_PER_SECOND
+}
+
+function keepOutputRunning(audio: AudioContext, until: number): void {
+  const silence = audio.createConstantSource()
+  silence.offset.value = 0
+  silence.connect(audio.destination)
+  silence.start()
+  silence.stop(until + LEAD_IN_SECONDS)
 }
 
 function scheduleClick(audio: AudioContext, time: number): void {

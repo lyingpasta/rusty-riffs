@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { measuredOffsetMilliseconds, startCalibration, type CalibrationSession } from './calibration'
+  import { measureOffset, startCalibration, type CalibrationResult, type CalibrationSession } from './calibration'
   import { interaction } from './interaction.svelte'
   import { timing } from './timing.svelte'
 
-  type Phase = { kind: 'tapping'; clicksHeard: number } | { kind: 'result'; offset: number | null }
+  type Phase = { kind: 'tapping'; clicksHeard: number } | { kind: 'result'; result: CalibrationResult }
 
   const TAP_FLASH_MILLISECONDS = 120
 
@@ -23,10 +23,9 @@
 
   function track(): void {
     if (!session || phase.kind !== 'tapping') return
-    const now = session.heardTime()
-    phase = { kind: 'tapping', clicksHeard: session.clickTimes.filter((time) => time <= now).length }
-    if (now < session.endTime) return
-    phase = { kind: 'result', offset: measuredOffsetMilliseconds(session.clickTimes, session.taps) }
+    phase = { kind: 'tapping', clicksHeard: session.clicksPlayed() }
+    if (!session.isFinished()) return
+    phase = { kind: 'result', result: measureOffset(session.clickTimes, session.taps) }
     session.stop()
   }
 
@@ -94,14 +93,17 @@
         {/each}
       </div>
       <div class="actions"><button onclick={close}>Cancel</button></div>
-    {:else if phase.offset === null}
-      <p>Not enough taps landed near the clicks. Try again, pressing Space on every click.</p>
+    {:else if phase.result.offsetMilliseconds === null}
+      <p>
+        Not enough taps landed near the clicks: {phase.result.matchedTapCount} of your {phase.result.tapCount} taps were
+        within 0.3 s of a click after the warm-up, and 6 are needed. Try again, pressing Space on every click.
+      </p>
       <div class="actions">
         <button onclick={close}>Cancel</button>
         <button onclick={begin}>Try again</button>
       </div>
     {:else}
-      {@const offset = phase.offset}
+      {@const offset = phase.result.offsetMilliseconds}
       <p>{describe(offset)} Markers you drop while playing will be moved back by that much.</p>
       <div class="actions">
         <button onclick={close}>Cancel</button>
