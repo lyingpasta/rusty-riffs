@@ -49,6 +49,9 @@
   let lastFrameTime = performance.now()
   let lastPlayheadSeconds = 0
   let hitBoxes: HitBox[] = []
+  let lastDrawInputs: unknown[] = []
+  const colorCache = new Map<string, string>()
+  let colorCacheThemeId = ''
 
   const durationSeconds = () => player.state?.song?.durationSeconds ?? 0
 
@@ -68,11 +71,41 @@
     targetStartSeconds = view.startSeconds
   }
 
+  function themeColor(name: string): string {
+    if (colorCacheThemeId !== interaction.theme.id) {
+      colorCache.clear()
+      colorCacheThemeId = interaction.theme.id
+    }
+    const cached = colorCache.get(name)
+    if (cached !== undefined) return cached
+    const value = getComputedStyle(canvas).getPropertyValue(name)
+    colorCache.set(name, value)
+    return value
+  }
+
+  function drawInputsChanged(): boolean {
+    const inputs = [
+      view.startSeconds,
+      view.pixelsPerSecond,
+      view.widthPixels,
+      heightPixels,
+      player.currentSeconds(),
+      dragStartX,
+      dragCurrentX,
+      player.state,
+      player.waveform,
+      interaction.mode,
+      interaction.theme,
+    ]
+    const hasChanged = inputs.some((input, index) => input !== lastDrawInputs[index])
+    lastDrawInputs = inputs
+    return hasChanged
+  }
+
   function draw(): void {
     const context = canvas.getContext('2d')
     if (!context) return
-    const style = getComputedStyle(canvas)
-    const color = (name: string) => style.getPropertyValue(name)
+    const color = themeColor
     const scale = window.devicePixelRatio
     context.setTransform(scale, 0, 0, scale, 0, 0)
     context.fillStyle = color('--wave-bg')
@@ -119,6 +152,10 @@
       return { seconds: [seconds[0], seconds[1]], isDraft: true }
     }
     const mode = interaction.mode
+    if (mode.kind === 'selection') {
+      const seconds = [mode.anchorSeconds, mode.endSeconds].sort((a, b) => a - b)
+      return { seconds: [seconds[0], seconds[1]], isDraft: true }
+    }
     if (mode.kind === 'new-loop') {
       const start = markerById(settings, mode.startMarkerId)
       const end = markerById(settings, mode.endMarkerId)
@@ -241,7 +278,7 @@
     dragStartX = null
     dragCurrentX = null
     if (wasDragging) {
-      player.run(async () => void (await backend.createLoopFromRange(startSeconds, endSeconds)))
+      actions.selectRange(startSeconds, endSeconds)
       return
     }
     player.run(() => backend.seek(endSeconds))
@@ -277,6 +314,7 @@
     canvas.width = widthPixels * window.devicePixelRatio
     canvas.height = heightPixels * window.devicePixelRatio
     view = { ...view, widthPixels }
+    lastDrawInputs = []
   }
 
   function frame(): void {
@@ -288,7 +326,7 @@
     view = clampView(view, durationSeconds())
     targetStartSeconds = clampView(targetView(), durationSeconds()).startSeconds
     view = easeTowards(view, targetStartSeconds, elapsedMilliseconds)
-    draw()
+    if (drawInputsChanged()) draw()
   }
 
   function followMovingPlayhead(): void {

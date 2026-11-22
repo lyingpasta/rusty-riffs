@@ -24,26 +24,27 @@ export const shortcuts: Shortcut[] = [
   { group: 'Markers', mode: 'normal', keys: ['m'], label: 'm', description: 'Add marker at playhead', run: actions.addMarker },
   { group: 'Markers', mode: 'normal', keys: [',', '.'], label: ', / .', description: 'Previous / next marker', run: (event) => actions.jumpToMarker(event.key === '.' ? 1 : -1) },
   { group: 'Markers', mode: 'normal', keys: ['i'], label: 'i', description: 'Rename marker at playhead', run: actions.renameMarkerAtPlayhead },
-  { group: 'Markers', mode: 'normal', keys: ['Backspace'], label: 'Backspace', description: 'Delete marker at playhead (and its loops)', run: actions.deleteMarkerAtPlayhead },
+  { group: 'Markers', mode: 'normal', keys: ['d'], label: 'd', description: 'Delete marker at playhead (and its loops)', run: actions.deleteMarkerAtPlayhead },
+  { group: 'Selection', mode: 'normal', keys: ['v'], label: 'v', description: 'Start a selection at the playhead', run: actions.startSelection },
+  { group: 'Selection', mode: 'selection', keys: ['h', 'l'], label: 'h / l', description: 'Move the selection end −1 s / +1 s', run: (event) => actions.moveSelectionEnd(event.key === 'l' ? 1 : -1) },
+  { group: 'Selection', mode: 'selection', keys: ['H', 'L'], label: 'H / L', description: 'Move the selection end −5 s / +5 s', run: (event) => actions.moveSelectionEnd(event.key === 'L' ? 5 : -5) },
+  { group: 'Selection', mode: 'selection', keys: [',', '.'], label: ', / .', description: 'Snap the selection end to the previous / next marker', run: (event) => actions.snapSelectionEnd(event.key === '.' ? 1 : -1) },
+  { group: 'Selection', mode: 'selection', keys: ['Enter'], label: 'Enter', description: 'Make a loop from the selection', run: actions.loopSelection },
+  { group: 'Selection', mode: 'selection', keys: ['d'], label: 'd', description: 'Delete every marker in the selection', run: actions.deleteMarkersInSelection },
   { group: 'Loops', mode: 'normal', keys: ['n'], label: 'n', description: 'New loop from marker at playhead', run: actions.startNewLoop },
   { group: 'Loops', mode: 'new-loop', keys: [',', '.'], label: ', / .', description: 'Move the new loop’s end marker', run: (event) => actions.moveNewLoopEnd(event.key === '.' ? 1 : -1) },
   { group: 'Loops', mode: 'new-loop', keys: ['Enter'], label: 'Enter', description: 'Save and activate the new loop', run: actions.confirmNewLoop },
   { group: 'Loops', mode: 'normal', keys: ['[', ']'], label: '[ / ]', description: 'Previous / next saved loop', run: (event) => actions.switchLoop(event.key === ']' ? 1 : -1) },
   { group: 'Loops', mode: 'normal', keys: ['o'], label: 'o', description: 'Loop on / off', run: actions.toggleLoop },
   { group: 'Loops', mode: 'normal', keys: ['I'], label: 'I', description: 'Rename active loop', run: actions.renameActiveLoop },
-  { group: 'Loops', mode: 'normal', keys: ['Shift+Backspace'], label: 'Shift + Backspace', description: 'Delete active loop', run: actions.deleteActiveLoop },
+  { group: 'Loops', mode: 'normal', keys: ['D'], label: 'D', description: 'Delete active loop', run: actions.deleteActiveLoop },
   { group: 'View', mode: 'any', keys: ['=', '+', '-'], label: '+ / -', description: 'Zoom in / out around the playhead', run: (event) => requestZoom(event.key !== '-') },
   { group: 'Practice', mode: 'normal', keys: ['u'], label: 'u', description: 'Speed trainer on / off', run: actions.toggleTrainer },
   { group: 'Practice', mode: 'normal', keys: ['p'], label: 'p', description: 'Pre-roll: off → 1 s → 2 s', run: actions.cyclePreroll },
   { group: 'View', mode: 'any', keys: [';'], label: ';', description: 'Next colour theme', run: actions.cycleTheme },
   { group: 'Help', mode: 'any', keys: ['?'], label: '?', description: 'Show / hide shortcuts', run: actions.toggleCheatSheet },
-  { group: 'Help', mode: 'any', keys: ['Escape'], label: 'Esc', description: 'Cancel new loop / close help', run: actions.cancel },
+  { group: 'Help', mode: 'any', keys: ['Escape'], label: 'Esc', description: 'Cancel selection or new loop / close help', run: actions.cancel },
 ]
-
-function keyName(event: KeyboardEvent): string {
-  if (event.key === 'Backspace' && event.shiftKey) return 'Shift+Backspace'
-  return event.key
-}
 
 function isTypingInField(event: KeyboardEvent): boolean {
   const target = event.target
@@ -53,7 +54,6 @@ function isTypingInField(event: KeyboardEvent): boolean {
 
 export function findShortcut(event: KeyboardEvent, mode: Mode['kind']): Shortcut | undefined {
   if (isTypingInField(event) || event.ctrlKey || event.metaKey || event.altKey) return undefined
-  const key = keyName(event)
-  const candidates = shortcuts.filter((shortcut) => shortcut.keys.includes(key))
+  const candidates = shortcuts.filter((shortcut) => shortcut.keys.includes(event.key))
   return candidates.find((shortcut) => shortcut.mode === mode) ?? candidates.find((shortcut) => shortcut.mode === 'any')
 }

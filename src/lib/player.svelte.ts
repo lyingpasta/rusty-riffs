@@ -13,13 +13,17 @@ class Player {
   private reportedSeconds = 0
   private reportedAt = 0
 
-  async connect(): Promise<void> {
-    await onPlayerState((state) => (this.state = state))
-    await onPlayhead((seconds) => {
+  async connect(): Promise<() => void> {
+    const stopStateUpdates = await onPlayerState((state) => (this.state = state))
+    const stopPlayheadUpdates = await onPlayhead((seconds) => {
       this.reportedSeconds = seconds
       this.reportedAt = performance.now()
     })
     this.state = await backend.getState()
+    return () => {
+      stopStateUpdates()
+      stopPlayheadUpdates()
+    }
   }
 
   async open(path: string): Promise<void> {

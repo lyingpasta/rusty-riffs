@@ -11,15 +11,17 @@ Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Sve
 - Pitch shift ±12 semitones, with ±50 cents of fine tuning, independent of speed
 - Zoomable waveform that scrolls smoothly and follows the playhead
 - Named markers, and saved loops built from them. Each loop remembers its own speed, and switching loops is one key
+- Selections: pick a range by keys or by dragging, then turn it into a loop or clear the markers inside it
+- Markers dropped while playing land where you heard the note: the app compensates for audio latency and your own timing (measured with a tap-along calibration), and can snap to the nearest note attack
 - Seamless looping, with an optional 0.5–2 s pre-roll before each restart
 - Speed trainer: each repeat of the loop adds a set number of percentage points until a target speed
-- Vim-style shortcuts that all sit under the right hand, so the left can stay on the guitar neck
+- Vim-style shortcuts, nearly all under the right hand, so the left can stay on the guitar neck
 - Three dark colour themes: Ink & bronze, Petrol & moonlight, Aubergine & ember
 - Every setting is saved per song, keyed by the file's contents, so reopening a song (even renamed or moved) restores everything
 
 ## Keyboard shortcuts
 
-Every key is under the right hand (thumb on Space), so you can drive the app between phrases. Press `?` in the app to see this list.
+Nearly every key is under the right hand (thumb on Space), so you can drive the app between phrases. The exceptions are `d` and `D` for deleting, following vim. Press `?` in the app to see this list.
 
 | Key | Action |
 |---|---|
@@ -31,27 +33,40 @@ Every key is under the right hand (thumb on Space), so you can drive the app bet
 | `m` | Add marker at playhead |
 | `,` / `.` | Previous / next marker |
 | `i` | Rename marker at playhead |
-| `Backspace` | Delete marker at playhead (and the loops that use it) |
+| `d` | Delete marker at playhead (and the loops that use it) |
+| `v` | Start a selection at the playhead |
+| `h` / `l`, `H` / `L` (selection) | Move the selection end ±1 s / ±5 s |
+| `,` / `.` (selection) | Snap the selection end to the previous / next marker |
+| `Enter` (selection) | Make a loop from the selection |
+| `d` (selection) | Delete every marker in the selection |
 | `n` | New loop from the marker at the playhead |
 | `,` / `.` (new-loop mode) | Move the new loop's end marker |
 | `Enter` (new-loop mode) | Save and activate the new loop |
 | `[` / `]` | Previous / next saved loop |
 | `o` | Loop on / off |
 | `I` | Rename active loop |
-| `Shift + Backspace` | Delete active loop |
+| `D` | Delete active loop |
 | `u` | Speed trainer on / off |
 | `p` | Pre-roll: off → 1 s → 2 s |
 | `+` / `-` | Zoom in / out around the playhead |
 | `;` | Next colour theme |
 | `?` | Show / hide shortcuts |
-| `Esc` | Cancel new loop / close help |
+| `Esc` | Cancel selection or new loop / close help |
 
 With the mouse:
-- Drag on the waveform to create a loop. This adds a start and an end marker.
+- Drag on the waveform to make a selection.
 - Click to seek, scroll to move, and `Ctrl + scroll` to zoom around the pointer.
 - Click a loop's bar to activate it, and double-click a marker or loop name to rename it.
 
-Pitch and fine tuning are set from the top bar.
+Pitch, fine tuning and timing are set from the top bar. Hover any control to see its name and shortcut.
+
+## Timing compensation
+
+When you press `m` or `v` while the song plays, you're reacting to something you already heard. The app moves the point back to the moment you heard it:
+
+1. The audio system's own delay is measured automatically, so the playhead shows what you're hearing.
+2. Your personal timing offset is subtracted. Its default is 150 ms. Click the target icon in the top bar to calibrate it: tap Space along with 16 clicks. It's in real time, so at 50% speed it covers half as much of the song.
+3. With snapping on (the magnet icon), the point then moves to the nearest note attack within ±80 ms.
 
 ## Setup
 

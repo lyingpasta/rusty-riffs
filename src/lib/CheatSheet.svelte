@@ -3,6 +3,7 @@
   import { shortcuts } from './shortcuts'
 
   const groups = [...new Set(shortcuts.map((shortcut) => shortcut.group))]
+  const MODE_NOTES: Record<string, string> = { 'new-loop': ' (in new-loop mode)', selection: ' (in selection mode)' }
 </script>
 
 <div class="backdrop" role="presentation" onclick={() => (interaction.isCheatSheetOpen = false)}>
@@ -13,12 +14,12 @@
         <dl>
           {#each shortcuts.filter((shortcut) => shortcut.group === group) as shortcut (shortcut.description)}
             <dt><kbd>{shortcut.label}</kbd></dt>
-            <dd>{shortcut.description}{shortcut.mode === 'new-loop' ? ' (in new-loop mode)' : ''}</dd>
+            <dd>{shortcut.description}{MODE_NOTES[shortcut.mode] ?? ''}</dd>
           {/each}
         </dl>
       </section>
     {/each}
-    <p class="hint">Mouse: drag on the waveform to make a loop, click to seek, scroll to move, Ctrl + scroll to zoom. Click a loop bar to activate it, double-click a name to rename it.</p>
+    <p class="hint">Mouse: drag on the waveform to select a range, click to seek, scroll to move, Ctrl + scroll to zoom. Click a loop bar to activate it, double-click a name to rename it.</p>
   </div>
 </div>
 

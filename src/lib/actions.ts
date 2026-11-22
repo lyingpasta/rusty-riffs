@@ -1,7 +1,9 @@
-import { backend, type SongSettings } from './backend'
+import { backend, type DeletedMarkers, type SongSettings } from './backend'
 import { interaction } from './interaction.svelte'
 import { player } from './player.svelte'
 import { applyTheme, nextTheme } from './theme'
+import { nearestAttackSeconds } from './attacks'
+import { timing } from './timing.svelte'
 import { activeLoop, currentSpeed, markerAtOrBefore, markerById, neighbourLoop, neighbourMarker } from './songModel'
 
 const SPEED_STEP_PERCENT = 5
@@ -21,6 +23,30 @@ function previousMarkerForJump(settings: SongSettings, seconds: number) {
   const current = markerAtOrBefore(settings.markers, seconds)
   if (current && seconds - current.seconds > REWIND_GRACE_SECONDS) return current
   return current ? neighbourMarker(settings.markers, current.seconds, -1) : null
+}
+
+function selectedRange(): [number, number] | null {
+  const mode = interaction.mode
+  if (mode.kind !== 'selection' || mode.anchorSeconds === mode.endSeconds) return null
+  return [Math.min(mode.anchorSeconds, mode.endSeconds), Math.max(mode.anchorSeconds, mode.endSeconds)]
+}
+
+function describeDeletedMarkers(deleted: DeletedMarkers): string {
+  const markers = deleted.markerCount === 1 ? '1 marker' : `${deleted.markerCount} markers`
+  if (deleted.removedLoopNames.length === 0) return `Deleted ${markers}`
+  return `Deleted ${markers} and loop ${deleted.removedLoopNames.join(', ')}`
+}
+
+function heardSeconds(settings: SongSettings): number {
+  const playheadSeconds = player.currentSeconds()
+  if (!player.state?.isPlaying) return playheadSeconds
+  return Math.max(playheadSeconds - timing.offsetInSongSeconds(currentSpeed(settings)), 0)
+}
+
+function markingSeconds(settings: SongSettings): number {
+  const seconds = heardSeconds(settings)
+  if (!timing.isSnapEnabled || !player.waveform) return seconds
+  return nearestAttackSeconds(player.waveform, seconds) ?? seconds
 }
 
 function seek(seconds: number): void {
@@ -64,7 +90,10 @@ export const actions = {
     })
   },
   addMarker(): void {
-    withSettings(() => player.run(async () => void (await backend.addMarker(player.currentSeconds()))))
+    withSettings((settings) => {
+      const seconds = markingSeconds(settings)
+      player.run(async () => void (await backend.addMarker(seconds)))
+    })
   },
   jumpToMarker(direction: 1 | -1): void {
     withSettings((settings) => {
@@ -76,14 +105,14 @@ export const actions = {
   },
   renameMarkerAtPlayhead(): void {
     withSettings((settings) => {
-      const marker = markerAtOrBefore(settings.markers, player.currentSeconds())
+      const marker = markerAtOrBefore(settings.markers, heardSeconds(settings))
       if (!marker) return interaction.showNotice('No marker at or before the playhead')
       interaction.renameTarget = { kind: 'marker', id: marker.id, name: marker.name }
     })
   },
   deleteMarkerAtPlayhead(): void {
     withSettings((settings) => {
-      const marker = markerAtOrBefore(settings.markers, player.currentSeconds())
+      const marker = markerAtOrBefore(settings.markers, heardSeconds(settings))
       if (!marker) return interaction.showNotice('No marker at or before the playhead')
       player.run(async () => {
         const removedLoops = await backend.deleteMarker(marker.id)
@@ -94,7 +123,7 @@ export const actions = {
   },
   startNewLoop(): void {
     withSettings((settings) => {
-      const start = markerAtOrBefore(settings.markers, player.currentSeconds())
+      const start = markerAtOrBefore(settings.markers, heardSeconds(settings))
       const end = start ? neighbourMarker(settings.markers, start.seconds, 1) : null
       if (!start || !end) return interaction.showNotice('A new loop needs a marker at the playhead and one after it')
       interaction.mode = { kind: 'new-loop', startMarkerId: start.id, endMarkerId: end.id }
@@ -116,6 +145,45 @@ export const actions = {
     if (mode.kind !== 'new-loop') return
     interaction.returnToNormal()
     player.run(async () => void (await backend.createLoop(mode.startMarkerId, mode.endMarkerId)))
+  },
+  startSelection(): void {
+    withSettings((settings) => {
+      const seconds = markingSeconds(settings)
+      interaction.mode = { kind: 'selection', anchorSeconds: seconds, endSeconds: seconds }
+    })
+  },
+  selectRange(anchorSeconds: number, endSeconds: number): void {
+    interaction.mode = { kind: 'selection', anchorSeconds, endSeconds }
+  },
+  moveSelectionEnd(deltaSeconds: number): void {
+    const mode = interaction.mode
+    if (mode.kind !== 'selection') return
+    const duration = player.state?.song?.durationSeconds ?? 0
+    const endSeconds = Math.min(Math.max(mode.endSeconds + deltaSeconds, 0), duration)
+    interaction.mode = { ...mode, endSeconds }
+  },
+  snapSelectionEnd(direction: 1 | -1): void {
+    const mode = interaction.mode
+    if (mode.kind !== 'selection') return
+    withSettings((settings) => {
+      const target = neighbourMarker(settings.markers, mode.endSeconds, direction)
+      if (target) interaction.mode = { ...mode, endSeconds: target.seconds }
+    })
+  },
+  loopSelection(): void {
+    const range = selectedRange()
+    if (!range) return interaction.showNotice('Select a range first: move the end with h, l, , or .')
+    interaction.returnToNormal()
+    player.run(async () => void (await backend.createLoopFromRange(range[0], range[1])))
+  },
+  deleteMarkersInSelection(): void {
+    const range = selectedRange()
+    if (!range) return interaction.showNotice('Select a range first: move the end with h, l, , or .')
+    interaction.returnToNormal()
+    player.run(async () => {
+      const deleted = await backend.deleteMarkersInRange(range[0], range[1])
+      interaction.showNotice(describeDeletedMarkers(deleted))
+    })
   },
   cancel(): void {
     interaction.returnToNormal()
@@ -174,6 +242,17 @@ export const actions = {
       const next = PREROLL_CHOICES_SECONDS[(currentIndex + 1) % PREROLL_CHOICES_SECONDS.length]
       player.run(() => backend.setPreroll(next))
     })
+  },
+  openCalibration(): void {
+    if (player.state?.isPlaying) player.run(() => backend.setPlaying(false))
+    interaction.isCalibrationOpen = true
+  },
+  toggleSnap(): void {
+    timing.toggleSnap()
+    interaction.showNotice(timing.isSnapEnabled ? 'Snapping to note attacks' : 'Snapping off')
+  },
+  changeTimingOffset(deltaMilliseconds: number): void {
+    timing.setOffset(timing.offsetMilliseconds + deltaMilliseconds)
   },
   cycleTheme(): void {
     interaction.theme = nextTheme(interaction.theme)

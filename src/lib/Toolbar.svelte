@@ -3,15 +3,16 @@
   import { backend, type SongSettings, type Trainer } from './backend'
   import { interaction } from './interaction.svelte'
   import { player } from './player.svelte'
+  import { timing } from './timing.svelte'
   import { currentSpeed, loopSpans } from './songModel'
   import Group from './panel/Group.svelte'
   import Pad from './panel/Pad.svelte'
   import Stepper from './panel/Stepper.svelte'
   import TimeCell from './panel/TimeCell.svelte'
 
-  const PREROLL_CHOICES_SECONDS = [0, 0.5, 1, 1.5, 2]
   const TRAINER_STEP_INCREMENT = 1
   const TRAINER_TARGET_INCREMENT = 5
+  const TIMING_STEP_MILLISECONDS = 10
   const NO_LOOP = ''
 
   let { settings, onopen }: { settings: SongSettings | null; onopen: () => void } = $props()
@@ -19,6 +20,7 @@
   const orderedLoops = $derived(
     settings ? loopSpans(settings).sort((left, right) => left.startSeconds - right.startSeconds) : [],
   )
+  const prerollLabel = $derived(settings && settings.prerollSeconds > 0 ? `${settings.prerollSeconds}s` : 'off')
 
   function signed(value: number): string {
     return value > 0 ? `+${value}` : `${value}`
@@ -37,21 +39,22 @@
 
 <nav class="bar">
   <Group label="Song">
-    <Pad onclick={onopen} disabled={player.isLoading} title="Open a song">Open</Pad>
+    <Pad icon="open" onclick={onopen} disabled={player.isLoading} title="Open a song (O)" />
     <Pad
+      icon={player.state?.isPlaying ? 'pause' : 'play'}
       onclick={actions.togglePlaying}
       disabled={!settings}
       isOn={Boolean(player.state?.isPlaying)}
-      isSquare
-      title="Play / pause (Space)">{player.state?.isPlaying ? '❚❚' : '▶'}</Pad
-    >
+      title="Play / pause (Space)"
+    />
     <TimeCell />
   </Group>
 
   {#if settings}
     <Group label="Speed">
       <Stepper
-        label="speed"
+        label="Speed (j / k)"
+        icon="speed"
         value="{Math.round(currentSpeed(settings))}%"
         ondecrement={() => actions.changeSpeed(-1)}
         onincrement={() => actions.changeSpeed(1)}
@@ -72,103 +75,108 @@
         {/each}
       </select>
       <Pad
+        icon="loop"
         onclick={actions.toggleLoop}
         isOn={settings.isLoopEnabled}
         disabled={settings.activeLoopId === null}
-        title="Loop on / off (o)">Loop</Pad
-      >
-      <Pad onclick={actions.startNewLoop} isOn={interaction.mode.kind === 'new-loop'} title="New loop from markers (n)">
-        New
-      </Pad>
+        title="Loop on / off (o)"
+      />
+      <Pad
+        icon="new-loop"
+        onclick={actions.startNewLoop}
+        isOn={interaction.mode.kind === 'new-loop'}
+        title="New loop from markers (n)"
+      />
     </Group>
 
     <div class="secondary">
       <Group label="Pitch" isSecondary>
         <Stepper
-          label="pitch"
-          value="{signed(settings.pitch.semitones)} st"
+          label="Pitch in semitones"
+          icon="pitch"
+          value={signed(settings.pitch.semitones)}
           ondecrement={() => actions.changePitch(-1)}
           onincrement={() => actions.changePitch(1)}
           onreset={actions.resetPitch}
         />
         <Stepper
-          label="fine"
+          label="Fine tune in cents"
+          icon="fine"
           value="{signed(settings.pitch.cents)}¢"
           ondecrement={() => actions.changeCents(-1)}
           onincrement={() => actions.changeCents(1)}
         />
       </Group>
 
-      <Group label="Pre-roll" isSecondary>
-        <select
-          class="preroll-select"
-          value={settings.prerollSeconds}
-          onchange={(event) => player.run(() => backend.setPreroll(Number(event.currentTarget.value)))}
-          title="Audio played before each loop restart (p)"
-        >
-          {#each PREROLL_CHOICES_SECONDS as seconds (seconds)}
-            <option value={seconds}>{seconds === 0 ? 'Pre-roll off' : `Pre-roll ${seconds} s`}</option>
-          {/each}
-        </select>
-      </Group>
-
-      <Group label="Speed trainer" isSecondary>
-        <Pad onclick={actions.toggleTrainer} isOn={settings.trainer.isEnabled} title="Speed trainer on / off (u)">
-          Train
+      <Group label="Practice" isSecondary>
+        <Pad icon="preroll" onclick={actions.cyclePreroll} isOn={settings.prerollSeconds > 0} title="Pre-roll before each loop restart (p)">
+          {prerollLabel}
         </Pad>
+        <Pad icon="trainer" onclick={actions.toggleTrainer} isOn={settings.trainer.isEnabled} title="Speed trainer on / off (u)" />
         <Stepper
-          label="step"
+          label="Trainer step per loop"
           value="+{settings.trainer.stepPercent}%"
           ondecrement={() => updateTrainer({ stepPercent: settings.trainer.stepPercent - TRAINER_STEP_INCREMENT })}
           onincrement={() => updateTrainer({ stepPercent: settings.trainer.stepPercent + TRAINER_STEP_INCREMENT })}
         />
         <Stepper
-          label="to"
-          value="{settings.trainer.targetPercent}%"
+          label="Trainer target speed"
+          value="→{settings.trainer.targetPercent}%"
           ondecrement={() => updateTrainer({ targetPercent: settings.trainer.targetPercent - TRAINER_TARGET_INCREMENT })}
           onincrement={() => updateTrainer({ targetPercent: settings.trainer.targetPercent + TRAINER_TARGET_INCREMENT })}
         />
+      </Group>
+
+      <Group label="Timing" isSecondary>
+        <Pad icon="snap" onclick={actions.toggleSnap} isOn={timing.isSnapEnabled} title="Snap new markers to note attacks" />
+        <Stepper
+          label="Timing offset for markers dropped while playing"
+          icon="timing"
+          value="{timing.offsetMilliseconds}ms"
+          ondecrement={() => actions.changeTimingOffset(-TIMING_STEP_MILLISECONDS)}
+          onincrement={() => actions.changeTimingOffset(TIMING_STEP_MILLISECONDS)}
+        />
+        <Pad icon="calibrate" onclick={actions.openCalibration} title="Calibrate timing by tapping along to clicks" />
       </Group>
     </div>
   {/if}
 
   <span class="filler" aria-hidden="true"></span>
 
-  <div class="end">
-    <Group label="View" isSecondary>
-      <Pad onclick={actions.cycleTheme} isSquare title="Theme: {interaction.theme.name} (;)">◐</Pad>
-      <Pad onclick={actions.toggleCheatSheet} isSquare title="Keyboard shortcuts (?)">?</Pad>
-    </Group>
-  </div>
+  <Group label="View" isSecondary>
+    <Pad icon="theme" onclick={actions.cycleTheme} title="Theme: {interaction.theme.name} (;)" />
+    <Pad icon="help" onclick={actions.toggleCheatSheet} title="Keyboard shortcuts (?)" />
+  </Group>
 </nav>
 
 <style>
   .bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1px var(--group-gap);
-    min-height: var(--bar-height);
+    flex-wrap: nowrap;
+    gap: 1px;
+    height: var(--bar-height);
+    overflow-x: auto;
+    overflow-y: hidden;
     background: var(--bar);
+    scrollbar-width: thin;
   }
 
-  .bar > :global(.group),
-  .secondary > :global(.group),
-  .end > :global(.group) {
+  .bar :global(.group) {
+    flex: none;
     height: var(--bar-height);
   }
 
-  .secondary,
-  .end {
+  .secondary {
     display: flex;
-    gap: var(--group-gap);
+    flex: none;
+    gap: 1px;
   }
 
   .filler {
     flex: 1;
+    min-width: 0;
     background: var(--wave-bg);
   }
-
-
 
   select {
     height: 100%;
@@ -176,7 +184,6 @@
   }
 
   .loop-select {
-    min-width: 150px;
-    max-width: 220px;
+    width: 140px;
   }
 </style>

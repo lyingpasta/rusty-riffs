@@ -1,6 +1,9 @@
 import { loadTheme, type Theme } from './theme'
 
-export type Mode = { kind: 'normal' } | { kind: 'new-loop'; startMarkerId: number; endMarkerId: number }
+export type Mode =
+  | { kind: 'normal' }
+  | { kind: 'new-loop'; startMarkerId: number; endMarkerId: number }
+  | { kind: 'selection'; anchorSeconds: number; endSeconds: number }
 
 export interface RenameTarget {
   kind: 'marker' | 'loop'
@@ -15,6 +18,7 @@ class Interaction {
   renameTarget = $state<RenameTarget | null>(null)
   notice = $state<string | null>(null)
   isCheatSheetOpen = $state(false)
+  isCalibrationOpen = $state(false)
   theme = $state<Theme>(loadTheme())
   private noticeTimer: ReturnType<typeof setTimeout> | undefined
 

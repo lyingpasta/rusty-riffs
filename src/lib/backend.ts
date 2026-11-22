@@ -49,6 +49,11 @@ export interface PlayerState {
   settings: SongSettings
 }
 
+export interface DeletedMarkers {
+  markerCount: number
+  removedLoopNames: string[]
+}
+
 export interface Waveform {
   peaks: number[]
   peaksPerSecond: number
@@ -72,6 +77,8 @@ export const backend = {
   addMarker: (seconds: number) => invoke<number>('add_marker', { seconds }),
   renameMarker: (markerId: number, name: string) => invoke<void>('rename_marker', { markerId, name }),
   deleteMarker: (markerId: number) => invoke<string[]>('delete_marker', { markerId }),
+  deleteMarkersInRange: (startSeconds: number, endSeconds: number) =>
+    invoke<DeletedMarkers>('delete_markers_in_range', { startSeconds, endSeconds }),
   createLoop: (startMarkerId: number, endMarkerId: number) =>
     invoke<number>('create_loop', { startMarkerId, endMarkerId }),
   createLoopFromRange: (startSeconds: number, endSeconds: number) =>

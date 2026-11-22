@@ -24,8 +24,8 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    min-width: 130px;
-    padding: 0 14px;
+    min-width: 112px;
+    padding: 0 12px;
     background: var(--cell);
     font-variant-numeric: tabular-nums;
   }

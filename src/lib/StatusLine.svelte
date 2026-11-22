@@ -2,10 +2,15 @@
   import { interaction } from './interaction.svelte'
   import { player } from './player.svelte'
   import { markerById } from './songModel'
+  import { formatSeconds } from './time'
 
-  const newLoopDescription = $derived.by(() => {
+  const modeDescription = $derived.by(() => {
     const mode = interaction.mode
     const settings = player.state?.settings
+    if (mode.kind === 'selection') {
+      const [from, to] = [mode.anchorSeconds, mode.endSeconds].sort((left, right) => left - right)
+      return `Selection ${formatSeconds(from)} to ${formatSeconds(to)}. Move the end with h l H L , or . Enter makes a loop, d deletes the markers inside, Esc cancels.`
+    }
     if (mode.kind !== 'new-loop' || !settings) return null
     const start = markerById(settings, mode.startMarkerId)?.name
     const end = markerById(settings, mode.endMarkerId)?.name
@@ -14,8 +19,8 @@
 </script>
 
 <footer class="status">
-  {#if newLoopDescription}
-    <span class="mode">{newLoopDescription}</span>
+  {#if modeDescription}
+    <span class="mode">{modeDescription}</span>
   {/if}
   {#if player.error}
     <span class="error" role="alert">{player.error}</span>

@@ -4,6 +4,7 @@
   import { player } from './lib/player.svelte'
   import { findShortcut } from './lib/shortcuts'
   import { onSongFileDropped, pickSongFile } from './lib/songPicker'
+  import CalibrationDialog from './lib/CalibrationDialog.svelte'
   import CheatSheet from './lib/CheatSheet.svelte'
   import RenameDialog from './lib/RenameDialog.svelte'
   import StatusLine from './lib/StatusLine.svelte'
@@ -16,7 +17,7 @@
   }
 
   function handleKeydown(event: KeyboardEvent): void {
-    if (interaction.renameTarget) return
+    if (interaction.renameTarget || interaction.isCalibrationOpen) return
     const shortcut = findShortcut(event, interaction.mode.kind)
     if (!shortcut) return
     event.preventDefault()
@@ -24,9 +25,13 @@
   }
 
   onMount(() => {
-    player.connect().catch((error) => (player.error = String(error)))
+    const disconnect = player.connect()
+    disconnect.catch((error) => (player.error = String(error)))
     const unlistenDrop = onSongFileDropped((path) => player.open(path))
-    return () => unlistenDrop.then((unlisten) => unlisten())
+    return () => {
+      disconnect.then((stop) => stop()).catch(() => undefined)
+      unlistenDrop.then((unlisten) => unlisten())
+    }
   })
 </script>
 
@@ -42,6 +47,10 @@
 
 {#if interaction.renameTarget}
   <RenameDialog target={interaction.renameTarget} />
+{/if}
+
+{#if interaction.isCalibrationOpen}
+  <CalibrationDialog />
 {/if}
 
 {#if interaction.isCheatSheetOpen}
