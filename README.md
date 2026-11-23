@@ -210,3 +210,7 @@ rm -rf src-tauri/icons/android src-tauri/icons/ios
 ```
 
 Domain terms (song, marker, loop, pre-roll, speed trainer…) are defined in [GLOSSARY.md](GLOSSARY.md).
+
+## License
+
+Rusty Riffs is released under the [MIT License](LICENSE). The bundled Barlow Semi Condensed font is under the [SIL Open Font License 1.1](src/assets/fonts/OFL.txt).

@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "A practice player for learning guitar parts by ear"
 edition = "2024"
 rust-version = "1.90"
+license = "MIT"
+repository = "https://github.com/lyingpasta/rusty-riffs"
 
 [lib]
 name = "rusty_riffs_lib"
