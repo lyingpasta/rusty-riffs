@@ -6,6 +6,8 @@
   import { player } from './player.svelte'
   import { assignLanes, loopSpans, markerById } from './songModel'
   import { handleZoomRequests, provideVisibleSeconds } from './waveformViewport'
+  import { drawCentreLine, drawMarkerFlag, drawPlayhead, envelopePath, fillEnvelope, type PeakArea } from './waveformPaint'
+  import { columnLoudness, envelopeRegions, smooth } from './waveformShape'
   import {
     clampView,
     easeTowards,
@@ -26,8 +28,6 @@
   const LANE_BAR_OFFSET = 16
   const LANE_BAR_HEIGHT = 3
   const DIMMED_ALPHA = 0.45
-  const FOCUSED_PEAK_ALPHA = 0.75
-  const MARKER_LINE_ALPHA = 0.35
   const MARKER_FONT = "500 12px 'Barlow Semi Condensed', system-ui"
   const LOOP_FONT = "500 12px 'Barlow Semi Condensed', system-ui"
 
@@ -119,9 +119,13 @@
     const selection = settings ? displayedSelection(settings) : null
     if (selection) drawSelection(context, selection, settings!, color)
     drawPeaks(context, { top: MARKER_LABEL_HEIGHT + EDGE_SPACE, bottom: peaksBottom }, selection, color)
-    if (settings) drawMarkers(context, settings, color('--muted'))
+    if (settings) drawMarkers(context, settings, color)
     drawLoopLanes(context, lanes, peaksBottom + EDGE_SPACE / 2, color)
-    if (player.state?.song) drawPlayhead(context, color('--accent'))
+    if (player.state?.song) drawPlayhead(context, playheadX(), heightPixels, color('--accent'))
+  }
+
+  function playheadX(): number {
+    return Math.round(secondsToX(view, player.currentSeconds()))
   }
 
   interface Selection {
@@ -168,56 +172,28 @@
 
   function drawPeaks(
     context: CanvasRenderingContext2D,
-    area: { top: number; bottom: number },
+    area: PeakArea,
     selection: Selection | null,
     color: (name: string) => string,
   ): void {
     const waveform = player.waveform
     if (!waveform) return
-    const middle = (area.top + area.bottom) / 2
-    const maxHalfHeight = (area.bottom - area.top) / 2
-    const quietColumns = new Path2D()
-    const focusedColumns = new Path2D()
-    for (let x = 0; x < view.widthPixels; x++) {
-      const seconds = xToSeconds(view, x)
-      const isFocused = selection !== null && seconds >= selection.seconds[0] && seconds <= selection.seconds[1]
-      const firstPeak = Math.floor(seconds * waveform.peaksPerSecond)
-      const lastPeak = Math.max(Math.floor(xToSeconds(view, x + 1) * waveform.peaksPerSecond), firstPeak + 1)
-      const halfHeight = Math.max(loudestPeak(waveform.peaks, firstPeak, lastPeak) * maxHalfHeight, 0.5)
-      const columns = isFocused ? focusedColumns : quietColumns
-      columns.rect(x, middle - halfHeight, 1, halfHeight * 2)
+    const focus = selection ? (selection.seconds.map((seconds) => secondsToX(view, seconds)) as [number, number]) : null
+    const envelope = {
+      path: envelopePath(smooth(columnLoudness(waveform, view)), area),
+      area,
+      regions: envelopeRegions(view.widthPixels, playheadX(), focus),
     }
-    context.fillStyle = color('--wave-peak')
-    context.fill(quietColumns)
-    context.fillStyle = color('--accent')
-    context.globalAlpha = FOCUSED_PEAK_ALPHA
-    context.fill(focusedColumns)
-    context.globalAlpha = 1
+    fillEnvelope(context, envelope, { neutral: color('--wave-peak'), accent: color('--accent') })
+    drawCentreLine(context, area, view.widthPixels, color('--muted'))
   }
 
-  function loudestPeak(peaks: number[], from: number, to: number): number {
-    let loudest = 0
-    for (let index = Math.max(from, 0); index < Math.min(to, peaks.length); index++) {
-      loudest = Math.max(loudest, peaks[index])
-    }
-    return loudest
-  }
-
-  function drawMarkers(context: CanvasRenderingContext2D, settings: SongSettings, muted: string): void {
+  function drawMarkers(context: CanvasRenderingContext2D, settings: SongSettings, color: (name: string) => string): void {
     context.font = MARKER_FONT
-    context.textBaseline = 'middle'
+    const colors = { background: color('--cell'), stripe: color('--muted'), text: color('--text') }
     for (const marker of settings.markers) {
       const x = Math.round(secondsToX(view, marker.seconds)) + 0.5
-      context.strokeStyle = muted
-      context.globalAlpha = MARKER_LINE_ALPHA
-      context.beginPath()
-      context.moveTo(x, 0)
-      context.lineTo(x, heightPixels)
-      context.stroke()
-      context.globalAlpha = 1
-      context.fillStyle = muted
-      context.fillText(marker.name, x + LABEL_INSET, MARKER_LABEL_HEIGHT / 2)
-      const right = x + LABEL_INSET * 2 + context.measureText(marker.name).width
+      const right = drawMarkerFlag(context, { x, name: marker.name }, { height: heightPixels, colors })
       hitBoxes.push({ kind: 'marker', id: marker.id, left: x - LABEL_INSET, top: 0, right, bottom: MARKER_LABEL_HEIGHT })
     }
   }
@@ -248,11 +224,6 @@
       context.restore()
       hitBoxes.push({ kind: 'loop', id: span.loop.id, left, top: laneTop, right, bottom: laneTop + LANE_HEIGHT })
     }
-  }
-
-  function drawPlayhead(context: CanvasRenderingContext2D, accent: string): void {
-    context.fillStyle = accent
-    context.fillRect(Math.round(secondsToX(view, player.currentSeconds())) - 1, 0, 2, heightPixels)
   }
 
   function hitAt(x: number, y: number): HitBox | undefined {
