@@ -18,6 +18,7 @@ class Interaction {
   renameTarget = $state<RenameTarget | null>(null)
   notice = $state<string | null>(null)
   isCheatSheetOpen = $state(false)
+  isAboutOpen = $state(false)
   isCalibrationOpen = $state(false)
   theme = $state<Theme>(loadTheme())
   private noticeTimer: ReturnType<typeof setTimeout> | undefined

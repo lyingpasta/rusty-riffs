@@ -15,6 +15,7 @@
     | 'trainer'
     | 'theme'
     | 'help'
+    | 'info'
 
   const STROKED: Partial<Record<IconName, string>> = {
     open: 'M2 4.5h4l1.5 1.5H14v6.5H2z',
@@ -30,6 +31,7 @@
     trainer: 'M2 12l4-4 3 3 5-6M10.5 5H14v3.5',
     theme: 'M8 13.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z',
     help: 'M6 6a2 2 0 1 1 2.8 1.8C8.3 8 8 8.5 8 9v.5M8 12v.5',
+    info: 'M8 13.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM8 7.5V11M8 5v.5',
   }
 
   const FILLED: Partial<Record<IconName, string>> = {

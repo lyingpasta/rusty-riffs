@@ -225,6 +225,7 @@ export const actions = {
   cancel(): void {
     interaction.returnToNormal()
     interaction.isCheatSheetOpen = false
+    interaction.isAboutOpen = false
   },
   switchLoop(direction: 1 | -1): void {
     withSettings((settings) => {
@@ -297,6 +298,11 @@ export const actions = {
     interaction.showNotice(`Theme: ${interaction.theme.name}`)
   },
   toggleCheatSheet(): void {
+    interaction.isAboutOpen = false
     interaction.isCheatSheetOpen = !interaction.isCheatSheetOpen
+  },
+  toggleAbout(): void {
+    interaction.isCheatSheetOpen = false
+    interaction.isAboutOpen = !interaction.isAboutOpen
   },
 }

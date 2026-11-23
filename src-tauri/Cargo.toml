@@ -21,6 +21,8 @@ log = "0.4"
 tauri = { version = "2.12.7", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 symphonia = { version = "0.6", features = ["mp3", "aac", "isomp4"] }
 cpal = "0.18"
 signalsmith-stretch = "0.1"
