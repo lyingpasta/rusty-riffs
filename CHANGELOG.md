@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/lyingpasta/rusty-riffs/compare/v0.2.0...v0.3.0) (2026-11-23)
+
+
+### Features
+
+* let the timing offset be typed in ([#8](https://github.com/lyingpasta/rusty-riffs/issues/8)) ([57ab87e](https://github.com/lyingpasta/rusty-riffs/commit/57ab87ec7cb633c2dbb0915ed8c4135b42adadd5))
+* redraw the waveform as a smooth, lit envelope ([#5](https://github.com/lyingpasta/rusty-riffs/issues/5)) ([994898d](https://github.com/lyingpasta/rusty-riffs/commit/994898d13139ebbb6ab9f6fb5db16e6e0d490a84))
+
+
+### Bug Fixes
+
+* keep the toolbar scrollbar from covering its buttons ([#7](https://github.com/lyingpasta/rusty-riffs/issues/7)) ([003d6dd](https://github.com/lyingpasta/rusty-riffs/commit/003d6dd3ce2485afec19f5885a2132c5679b13cc))
+
 ## [0.2.0](https://github.com/lyingpasta/rusty-riffs/compare/v0.1.1...v0.2.0) (2026-11-23)
 
 
