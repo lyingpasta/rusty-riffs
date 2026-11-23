@@ -4,6 +4,7 @@ import { player } from './player.svelte'
 import { applyTheme, nextTheme } from './theme'
 import { nearestAttackSeconds } from './attacks'
 import { timing } from './timing.svelte'
+import { parseTypedMilliseconds } from './typedMilliseconds'
 import { pickSongFile } from './songPicker'
 import { visibleSecondsOnScreen } from './waveformViewport'
 import { activeLoop, currentSpeed, markerAtOrBefore, markerById, neighbourLoop, neighbourMarker } from './songModel'
@@ -293,6 +294,14 @@ export const actions = {
   },
   changeTimingOffset(deltaMilliseconds: number): void {
     timing.setOffset(timing.offsetMilliseconds + deltaMilliseconds)
+  },
+  setTimingOffset(typedText: string): void {
+    const milliseconds = parseTypedMilliseconds(typedText)
+    if (milliseconds === null) {
+      interaction.showNotice(`"${typedText}" is not a timing offset in milliseconds`)
+      return
+    }
+    timing.setOffset(milliseconds)
   },
   cycleTheme(): void {
     interaction.theme = nextTheme(interaction.theme)

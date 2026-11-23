@@ -9,6 +9,7 @@
   import Pad from './panel/Pad.svelte'
   import Stepper from './panel/Stepper.svelte'
   import TimeCell from './panel/TimeCell.svelte'
+  import EditableValue from './panel/EditableValue.svelte'
   import HorizontalScroller from './HorizontalScroller.svelte'
 
   const TRAINER_STEP_INCREMENT = 1
@@ -134,11 +135,17 @@
             <Pad icon="snap" onclick={actions.toggleSnap} isOn={timing.isSnapEnabled} title="Snap new markers to note attacks" />
             <Stepper
               label="Timing offset for markers dropped while playing"
-              icon="timing"
-              value="{timing.offsetMilliseconds}ms"
               ondecrement={() => actions.changeTimingOffset(-TIMING_STEP_MILLISECONDS)}
               onincrement={() => actions.changeTimingOffset(TIMING_STEP_MILLISECONDS)}
-            />
+            >
+              <EditableValue
+                label="Timing offset for markers dropped while playing"
+                icon="timing"
+                value={timing.offsetMilliseconds}
+                unit="ms"
+                oncommit={actions.setTimingOffset}
+              />
+            </Stepper>
             <Pad icon="calibrate" onclick={actions.openCalibration} title="Calibrate timing by tapping along to clicks" />
           </Group>
         </div>
