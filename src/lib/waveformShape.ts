@@ -1,18 +1,25 @@
-import { xToSeconds, type WaveformView } from './waveformView.ts'
+import { secondsToX, xToSeconds, type WaveformView } from './waveformView.ts'
 
 export interface PeakData {
   peaks: number[]
   peaksPerSecond: number
 }
 
-export interface EnvelopeRegion {
+export interface Bar {
+  left: number
+  width: number
+  loudness: number
+}
+
+export interface ToneRegion {
   left: number
   right: number
   isPlayed: boolean
   isFocused: boolean
 }
 
-const SMOOTHING_WEIGHTS = [1, 2, 1]
+const MINIMUM_SLOT_PIXELS = 4
+const GAP_FRACTION = 0.25
 const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i
 
 function loudestPeak(peaks: number[], from: number, to: number): number {
@@ -23,26 +30,24 @@ function loudestPeak(peaks: number[], from: number, to: number): number {
   return loudest
 }
 
-export function columnLoudness(waveform: PeakData, view: WaveformView): number[] {
-  const loudness: number[] = []
-  for (let x = 0; x < view.widthPixels; x++) {
-    const firstPeak = Math.floor(xToSeconds(view, x) * waveform.peaksPerSecond)
-    const lastPeak = Math.max(Math.floor(xToSeconds(view, x + 1) * waveform.peaksPerSecond), firstPeak + 1)
-    loudness.push(loudestPeak(waveform.peaks, firstPeak, lastPeak))
+export function waveformBars(waveform: PeakData, view: WaveformView): Bar[] {
+  const peaksPerSlot = Math.max(Math.ceil((MINIMUM_SLOT_PIXELS * waveform.peaksPerSecond) / view.pixelsPerSecond), 1)
+  const slotSeconds = peaksPerSlot / waveform.peaksPerSecond
+  const slotPixels = slotSeconds * view.pixelsPerSecond
+  const width = slotPixels * (1 - GAP_FRACTION)
+  const firstSlot = Math.max(Math.floor(view.startSeconds / slotSeconds), 0)
+  const lastSlot = Math.ceil(xToSeconds(view, view.widthPixels) / slotSeconds)
+  const bars: Bar[] = []
+  for (let slot = firstSlot; slot < lastSlot; slot++) {
+    const firstPeak = slot * peaksPerSlot
+    if (firstPeak >= waveform.peaks.length) break
+    const loudness = loudestPeak(waveform.peaks, firstPeak, firstPeak + peaksPerSlot)
+    bars.push({ left: secondsToX(view, slot * slotSeconds), width, loudness })
   }
-  return loudness
+  return bars
 }
 
-export function smooth(values: number[]): number[] {
-  const totalWeight = SMOOTHING_WEIGHTS.reduce((sum, weight) => sum + weight, 0)
-  return values.map((value, index) => {
-    const previous = values[index - 1] ?? value
-    const next = values[index + 1] ?? value
-    return (previous * SMOOTHING_WEIGHTS[0] + value * SMOOTHING_WEIGHTS[1] + next * SMOOTHING_WEIGHTS[2]) / totalWeight
-  })
-}
-
-export function envelopeRegions(widthPixels: number, playheadX: number, focus: [number, number] | null): EnvelopeRegion[] {
+export function toneRegions(widthPixels: number, playheadX: number, focus: [number, number] | null): ToneRegion[] {
   const cuts = [0, widthPixels, playheadX, ...(focus ?? [])].map((x) => Math.min(Math.max(x, 0), widthPixels))
   const edges = [...new Set(cuts)].sort((left, right) => left - right)
   return edges.slice(1).map((right, index) => {

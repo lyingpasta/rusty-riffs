@@ -6,8 +6,8 @@
   import { player } from './player.svelte'
   import { assignLanes, loopSpans, markerById } from './songModel'
   import { handleZoomRequests, provideVisibleSeconds } from './waveformViewport'
-  import { drawCentreLine, drawMarkerFlag, drawPlayhead, envelopePath, fillEnvelope, type PeakArea } from './waveformPaint'
-  import { columnLoudness, envelopeRegions, smooth } from './waveformShape'
+  import { barsPath, drawMarkerFlag, drawPlayhead, fillBars, type PeakArea } from './waveformPaint'
+  import { toneRegions, waveformBars } from './waveformShape'
   import {
     clampView,
     easeTowards,
@@ -179,13 +179,12 @@
     const waveform = player.waveform
     if (!waveform) return
     const focus = selection ? (selection.seconds.map((seconds) => secondsToX(view, seconds)) as [number, number]) : null
-    const envelope = {
-      path: envelopePath(smooth(columnLoudness(waveform, view)), area),
+    const bars = {
+      path: barsPath(waveformBars(waveform, view), area),
       area,
-      regions: envelopeRegions(view.widthPixels, playheadX(), focus),
+      regions: toneRegions(view.widthPixels, playheadX(), focus),
     }
-    fillEnvelope(context, envelope, { neutral: color('--wave-peak'), accent: color('--accent') })
-    drawCentreLine(context, area, view.widthPixels, color('--muted'))
+    fillBars(context, bars, { neutral: color('--wave-peak'), accent: color('--accent') })
   }
 
   function drawMarkers(context: CanvasRenderingContext2D, settings: SongSettings, color: (name: string) => string): void {
