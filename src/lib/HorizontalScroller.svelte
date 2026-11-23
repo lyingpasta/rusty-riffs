@@ -20,6 +20,7 @@
 
   function pressTrack(event: PointerEvent): void {
     const track = event.currentTarget as HTMLElement
+    event.preventDefault()
     if (event.target === track) jumpTo(event, track)
     track.setPointerCapture(event.pointerId)
     drag = { pointerStartX: event.clientX, scrollLeftAtStart: viewport.scrollLeft }
@@ -46,7 +47,7 @@
   })
 </script>
 
-<div class="scroller">
+<div class="scroller" class:is-dragging={drag}>
   <div class="viewport" id={viewportId} bind:this={viewport} onscroll={measure}>
     <div class="content" bind:this={content}>
       {@render children()}
@@ -54,7 +55,7 @@
   </div>
 
   {#if thumb}
-    <div class="scrollbar" class:is-dragging={drag}>
+    <div class="scrollbar">
       <div
         class="track"
         role="scrollbar"
@@ -80,6 +81,11 @@
     position: relative;
   }
 
+  .is-dragging {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   .viewport {
     overflow-x: auto;
     overflow-y: hidden;
@@ -103,6 +109,8 @@
     display: flex;
     align-items: flex-end;
     height: var(--scrollbar-hover-height);
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   .track {
