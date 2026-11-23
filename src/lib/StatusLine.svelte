@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { actions } from './actions'
   import { interaction } from './interaction.svelte'
   import { player } from './player.svelte'
   import { markerById } from './songModel'
   import { formatSeconds } from './time'
+  import { updates } from './updates.svelte'
 
   const modeDescription = $derived.by(() => {
     const mode = interaction.mode
@@ -26,6 +28,9 @@
     <span class="error" role="alert">{player.error}</span>
   {:else if interaction.notice}
     <span class="notice">{interaction.notice}</span>
+  {/if}
+  {#if updates.status.kind === 'available'}
+    <button class="update" onclick={actions.toggleAbout}>Version {updates.status.version} is available (a)</button>
   {/if}
   <span class="song">
     {player.isLoading ? 'Loading…' : (player.state?.song?.name ?? 'Drop an audio file here, or press Open')}
@@ -54,6 +59,18 @@
 
   .error {
     color: var(--error);
+  }
+
+  .update {
+    padding: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+  }
+
+  .update:hover {
+    text-decoration: underline;
   }
 
   .song {

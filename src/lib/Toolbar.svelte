@@ -146,6 +146,7 @@
   <Group label="View" isSecondary>
     <Pad icon="theme" onclick={actions.cycleTheme} title="Theme: {interaction.theme.name} (;)" />
     <Pad icon="help" onclick={actions.toggleCheatSheet} title="Keyboard shortcuts (?)" />
+    <Pad icon="info" onclick={actions.toggleAbout} title="About and updates (a)" />
   </Group>
 </nav>
 

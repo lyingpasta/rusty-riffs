@@ -21,6 +21,7 @@ Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Sve
 - Three dark colour themes: Ink & bronze, Petrol & moonlight, Aubergine & ember
 - Every setting is saved per song, keyed by the file's contents, so reopening a song (even renamed or moved) restores everything
 - The app reopens the last song you played when it starts
+- Built-in updates: the app checks for a new version at launch and offers it in a popup. After an update, a What's new popup lists the changes from the changelog. The About dialog (`a`) shows the version and can check again
 
 ## Keyboard shortcuts
 
@@ -55,7 +56,8 @@ Nearly every key is under the right hand (thumb on Space), so you can drive the 
 | `+` / `-` | Zoom in / out around the playhead |
 | `;` | Next colour theme |
 | `?` | Show / hide shortcuts |
-| `Esc` | Cancel selection or new loop / close help |
+| `a` | About, version and updates |
+| `Esc` | Cancel selection or new loop / close help, About or a popup |
 
 With the mouse:
 - Drag on the waveform to make a selection.
@@ -154,6 +156,19 @@ Releases are built by GitHub Actions (`.github/workflows/release.yml`) with [rel
 2. Merging that PR tags the version and creates a **draft** GitHub release.
 3. The workflow then builds the app on Linux, Windows and macOS (Apple Silicon) and attaches the installers to the draft. Check it on GitHub and click Publish.
 
+### In-app updates
+
+The app uses the [Tauri updater](https://v2.tauri.app/plugin/updater/). At launch, and from the About dialog, it fetches `latest.json` from the latest **published** release, so a draft reaches users only once you click Publish. Update bundles are signed, and the app checks them against the public key in `src-tauri/tauri.conf.json`.
+
+The release workflow signs with two repository secrets:
+
+| Secret | Value |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | contents of the private key file |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | the key's password (empty if it has none) |
+
+Keep a backup of the private key: if it's lost, installed copies can't verify any new update, and users have to reinstall by hand. To replace the key, run `pnpm tauri signer generate -w ~/.tauri/rusty-riffs.key`, put the new public key in `tauri.conf.json` and update both secrets.
+
 release-please reads [Conventional Commits](https://www.conventionalcommits.org) to pick the version, so commit messages need a type prefix:
 
 | Prefix | Example | Effect |
@@ -189,6 +204,7 @@ The download page lives in `site/`: plain HTML, CSS and JavaScript with no build
 
 ```sh
 pnpm check                                   # Svelte + TypeScript type check
+pnpm test                                    # UI unit tests
 cd src-tauri && cargo clippy --all-targets   # Rust lint
 cd src-tauri && cargo test                   # Rust tests
 ```
