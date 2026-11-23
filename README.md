@@ -174,4 +174,12 @@ file ─► symphonia (decode to stereo f32)
 - **`src/`** is the Svelte UI. `src/lib/shortcuts.ts` defines every shortcut, and the `?` cheat sheet is generated from the same table. Colour themes are sets of CSS variables in `src/app.css`.
 - Settings are stored as one JSON file per song, in the app data directory under `songs/` (on Linux, `~/.local/share/dev.lyingpasta.rustyriffs/songs/`).
 
+The app icon is drawn in `src-tauri/icons/app-icon.svg`. After changing it, regenerate every icon size with:
+
+```sh
+rsvg-convert -w 1024 -h 1024 src-tauri/icons/app-icon.svg -o /tmp/app-icon.png
+pnpm tauri icon /tmp/app-icon.png
+rm -rf src-tauri/icons/android src-tauri/icons/ios
+```
+
 Domain terms (song, marker, loop, pre-roll, speed trainer…) are defined in [GLOSSARY.md](GLOSSARY.md).

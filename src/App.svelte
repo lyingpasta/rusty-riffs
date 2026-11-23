@@ -4,12 +4,36 @@
   import { player } from './lib/player.svelte'
   import { findShortcut } from './lib/shortcuts'
   import { onSongFileDropped } from './lib/songPicker'
+  import Splash from './lib/brand/Splash.svelte'
   import CalibrationDialog from './lib/CalibrationDialog.svelte'
   import CheatSheet from './lib/CheatSheet.svelte'
   import RenameDialog from './lib/RenameDialog.svelte'
   import StatusLine from './lib/StatusLine.svelte'
   import Toolbar from './lib/Toolbar.svelte'
   import Waveform from './lib/Waveform.svelte'
+
+  const MINIMUM_STARTUP_SPLASH_MILLISECONDS = 600
+  const SONG_LOADING_SPLASH_DELAY_MILLISECONDS = 200
+
+  let isStarting = $state(true)
+  let isSongLoadingSlow = $state(false)
+
+  const splashStatus = $derived(
+    player.loadingName ? `Opening ${player.loadingName}…` : isStarting ? 'Opening your last song…' : 'Opening…',
+  )
+
+  $effect(() => {
+    if (!player.isLoading) {
+      isSongLoadingSlow = false
+      return
+    }
+    const timer = setTimeout(() => (isSongLoadingSlow = true), SONG_LOADING_SPLASH_DELAY_MILLISECONDS)
+    return () => clearTimeout(timer)
+  })
+
+  function wait(milliseconds: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds))
+  }
 
   function handleKeydown(event: KeyboardEvent): void {
     if (interaction.renameTarget || interaction.isCalibrationOpen) return
@@ -21,7 +45,8 @@
 
   onMount(() => {
     const disconnect = player.connect()
-    disconnect.then(() => player.openLast()).catch((error) => (player.error = String(error)))
+    const startup = disconnect.then(() => player.openLast()).catch((error) => (player.error = String(error)))
+    Promise.all([startup, wait(MINIMUM_STARTUP_SPLASH_MILLISECONDS)]).then(() => (isStarting = false))
     const unlistenDrop = onSongFileDropped((path) => player.open(path))
     return () => {
       disconnect.then((stop) => stop()).catch(() => undefined)
@@ -42,6 +67,10 @@
 
 {#if interaction.renameTarget}
   <RenameDialog target={interaction.renameTarget} />
+{/if}
+
+{#if isStarting || isSongLoadingSlow}
+  <Splash status={splashStatus} />
 {/if}
 
 {#if interaction.isCalibrationOpen}

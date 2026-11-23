@@ -10,6 +10,7 @@ class Player {
   waveform = $state.raw<Waveform | null>(null)
   error = $state<string | null>(null)
   isLoading = $state(false)
+  loadingName = $state<string | null>(null)
   private reportedSeconds = 0
   private reportedAt = 0
 
@@ -27,6 +28,7 @@ class Player {
   }
 
   async open(path: string): Promise<void> {
+    this.loadingName = songNameFromPath(path)
     await this.loadWaveform(() => backend.openSong(path))
   }
 
@@ -43,6 +45,7 @@ class Player {
       this.error = `Could not open the song: ${String(error)}`
     } finally {
       this.isLoading = false
+      this.loadingName = null
     }
   }
 
@@ -56,6 +59,11 @@ class Player {
   run(action: () => Promise<void>): void {
     action().catch((error) => (this.error = String(error)))
   }
+}
+
+function songNameFromPath(path: string): string {
+  const fileName = path.split(/[\\/]/).pop() ?? path
+  return fileName.replace(/\.[^.]+$/, '')
 }
 
 export const player = new Player()
