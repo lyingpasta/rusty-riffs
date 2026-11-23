@@ -163,7 +163,7 @@ release-please reads [Conventional Commits](https://www.conventionalcommits.org)
 | `feat!:` / `fix!:` | `feat!: change the settings format` | breaking change (minor bump while below 1.0) |
 | `docs:`, `chore:`, `refactor:`… | `docs: explain the release flow` | no release on their own |
 
-The version lives in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `src-tauri/Cargo.lock`; the release PR bumps all four.
+The version lives in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `src-tauri/Cargo.lock`. release-please bumps the first three in the release PR. It can't edit `Cargo.lock`, so a follow-up job in the same workflow runs `cargo update --workspace` on the PR branch and pushes the result.
 
 ### Verifying a download
 

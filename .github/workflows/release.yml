@@ -18,12 +18,33 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      release_pr_branch: ${{ steps.release.outputs.pr && fromJSON(steps.release.outputs.pr).headBranchName }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  sync-cargo-lock:
+    name: Sync Cargo.lock in the release PR
+    needs: release-please
+    if: needs.release-please.outputs.release_pr_branch != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.release_pr_branch }}
+
+      - run: cargo update --workspace --manifest-path src-tauri/Cargo.toml
+
+      - name: Commit the version bump
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: sync Cargo.lock with the release version"
+          git push
 
   build:
     name: Build ${{ matrix.name }}

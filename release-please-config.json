@@ -10,8 +10,7 @@
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
         { "type": "json", "path": "src-tauri/tauri.conf.json", "jsonpath": "$.version" },
-        { "type": "toml", "path": "src-tauri/Cargo.toml", "jsonpath": "$.package.version" },
-        { "type": "toml", "path": "src-tauri/Cargo.lock", "jsonpath": "$.package[?(@.name=='rusty-riffs')].version" }
+        { "type": "toml", "path": "src-tauri/Cargo.toml", "jsonpath": "$.package.version" }
       ]
     }
   }
