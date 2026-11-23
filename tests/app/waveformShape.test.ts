@@ -1,52 +1,33 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { toneRegions, waveformBars, withAlpha } from '../../src/lib/waveformShape.ts'
+import { columnLoudness, envelopeRegions, smooth, withAlpha } from '../../src/lib/waveformShape.ts'
 
-test('zoomed out, each bar covers several peaks and takes the loudest', () => {
-  const waveform = { peaks: [0.1, 0.9, 0.2, 0.4, 0.3, 0.6, 0.5, 0.2], peaksPerSecond: 4 }
-  const view = { startSeconds: 0, pixelsPerSecond: 8, widthPixels: 16 }
-  assert.deepEqual(waveformBars(waveform, view), [
-    { left: 0, width: 3, loudness: 0.9 },
-    { left: 4, width: 3, loudness: 0.4 },
-    { left: 8, width: 3, loudness: 0.6 },
-    { left: 12, width: 3, loudness: 0.5 },
-  ])
+test('each column takes the loudest peak it covers', () => {
+  const waveform = { peaks: [0.1, 0.9, 0.2, 0.4], peaksPerSecond: 4 }
+  const view = { startSeconds: 0, pixelsPerSecond: 2, widthPixels: 2 }
+  assert.deepEqual(columnLoudness(waveform, view), [0.9, 0.4])
 })
 
-test('zoomed in, each peak gets its own wider bar', () => {
-  const waveform = { peaks: [0.1, 0.9, 0.2], peaksPerSecond: 1 }
-  const view = { startSeconds: 0, pixelsPerSecond: 20, widthPixels: 60 }
-  assert.deepEqual(waveformBars(waveform, view), [
-    { left: 0, width: 15, loudness: 0.1 },
-    { left: 20, width: 15, loudness: 0.9 },
-    { left: 40, width: 15, loudness: 0.2 },
-  ])
+test('a column narrower than one peak still reads that peak', () => {
+  const waveform = { peaks: [0.5], peaksPerSecond: 1 }
+  const view = { startSeconds: 0, pixelsPerSecond: 4, widthPixels: 3 }
+  assert.deepEqual(columnLoudness(waveform, view), [0.5, 0.5, 0.5])
 })
 
-test('bars stay anchored to song time while the view scrolls', () => {
-  const waveform = { peaks: [0.1, 0.9, 0.2, 0.4], peaksPerSecond: 1 }
-  const view = { startSeconds: 1.5, pixelsPerSecond: 10, widthPixels: 20 }
-  assert.deepEqual(
-    waveformBars(waveform, view).map((bar) => bar.left),
-    [-5, 5, 15],
-  )
-})
-
-test('bars stop at the end of the song', () => {
-  const waveform = { peaks: [0.5, 0.5], peaksPerSecond: 1 }
-  const view = { startSeconds: 0, pixelsPerSecond: 10, widthPixels: 100 }
-  assert.equal(waveformBars(waveform, view).length, 2)
+test('smoothing softens a spike but keeps flat stretches flat', () => {
+  assert.deepEqual(smooth([0, 1, 0]), [0.25, 0.5, 0.25])
+  assert.deepEqual(smooth([0.3, 0.3, 0.3]), [0.3, 0.3, 0.3])
 })
 
 test('without a focus the envelope splits only at the playhead', () => {
-  assert.deepEqual(toneRegions(100, 40, null), [
+  assert.deepEqual(envelopeRegions(100, 40, null), [
     { left: 0, right: 40, isPlayed: true, isFocused: false },
     { left: 40, right: 100, isPlayed: false, isFocused: false },
   ])
 })
 
 test('a playhead inside the loop splits the loop into played and upcoming parts', () => {
-  const regions = toneRegions(100, 50, [30, 70])
+  const regions = envelopeRegions(100, 50, [30, 70])
   assert.deepEqual(
     regions.map(({ left, right, isPlayed, isFocused }) => [left, right, isPlayed, isFocused]),
     [
@@ -59,7 +40,7 @@ test('a playhead inside the loop splits the loop into played and upcoming parts'
 })
 
 test('regions stay inside the canvas when the playhead or loop is off screen', () => {
-  const regions = toneRegions(100, -20, [80, 150])
+  const regions = envelopeRegions(100, -20, [80, 150])
   assert.deepEqual(
     regions.map(({ left, right }) => [left, right]),
     [
