@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rusty Riffs</title>
+    <meta name="description" content="A free desktop practice player for learning guitar parts by ear. Slow songs down without changing pitch, shift pitch, loop the hard bits and mark sections." />
+    <meta property="og:title" content="Rusty Riffs" />
+    <meta property="og:description" content="A free desktop practice player for learning guitar parts by ear." />
+    <meta name="theme-color" content="#11141b" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="download.js" defer></script>
+    <script src="theme.js" defer></script>
+  </head>
+  <body>
+    <header class="top-bar">
+      <a class="brand" href="#">
+        <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M6 36 C8 36 8.5 32.5 10.5 32.5 C12.5 32.5 12.5 39.5 14.5 39.5 C16.5 39.5 16.5 29 19 29 C21.5 29 21.5 43 24 43 C26.5 43 27 36 30 36 C36 36 43 34 43 24.5 C43 17 33.5 17 33.5 24.5 C33.5 32 41 36 47 36 L58 36" pathLength="1" /></svg>
+        Rusty Riffs
+      </a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/lyingpasta/rusty-riffs">GitHub</a>
+        <button class="theme-button" type="button" title="Next colour theme (;)" aria-label="Next colour theme">
+          <span></span><span></span><span></span>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <svg class="hero-logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M6 36 C8 36 8.5 32.5 10.5 32.5 C12.5 32.5 12.5 39.5 14.5 39.5 C16.5 39.5 16.5 29 19 29 C21.5 29 21.5 43 24 43 C26.5 43 27 36 30 36 C36 36 43 34 43 24.5 C43 17 33.5 17 33.5 24.5 C33.5 32 41 36 47 36 L58 36" pathLength="1" /></svg>
+        <h1>Learn guitar parts by ear.</h1>
+        <p class="lead">
+          Rusty Riffs is a desktop practice player. Slow a recording down without changing its pitch,
+          shift it for songs in other tunings, loop the hard bits seamlessly and mark the sections you're working on.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" id="primary-download" href="#download">Download</a>
+          <a class="button" href="https://github.com/lyingpasta/rusty-riffs">View source</a>
+        </div>
+        <p class="hero-note" id="release-note">Free and open source · Linux, Windows and macOS</p>
+
+        <div class="player-mock" aria-hidden="true">
+          <div class="mock-bar">
+            <span class="mock-cell">Speed <b>75%</b></span>
+            <span class="mock-cell">Pitch <b>−2</b></span>
+            <span class="mock-cell accent">Loop <b>Solo</b></span>
+            <span class="mock-cell">Trainer <b>+2% → 100%</b></span>
+          </div>
+          <div class="mock-wave">
+            <svg id="mock-waveform" viewBox="0 0 1000 160" preserveAspectRatio="none"><path d="M0 61h3v39h-3zM5 62h3v37h-3zM10 54h3v53h-3zM15 61h3v38h-3zM20 53h3v54h-3zM25 54h3v51h-3zM30 58h3v43h-3zM35 50h3v61h-3zM40 57h3v46h-3zM45 49h3v63h-3zM50 55h3v51h-3zM55 53h3v53h-3zM60 46h3v69h-3zM65 36h3v88h-3zM70 50h3v59h-3zM75 47h3v65h-3zM80 37h3v86h-3zM85 28h3v103h-3zM90 36h3v87h-3zM95 40h3v80h-3zM100 24h3v111h-3zM105 47h3v65h-3zM110 26h3v109h-3zM115 40h3v80h-3zM120 43h3v73h-3zM125 44h3v73h-3zM130 38h3v84h-3zM135 23h3v113h-3zM140 41h3v79h-3zM145 29h3v102h-3zM150 27h3v105h-3zM155 35h3v91h-3zM160 29h3v101h-3zM165 43h3v74h-3zM170 43h3v73h-3zM175 39h3v82h-3zM180 26h3v109h-3zM185 33h3v94h-3zM190 36h3v87h-3zM195 29h3v102h-3zM200 33h3v94h-3zM205 38h3v85h-3zM210 24h3v111h-3zM215 28h3v105h-3zM220 40h3v79h-3zM225 32h3v96h-3zM230 34h3v92h-3zM235 26h3v108h-3zM240 30h3v99h-3zM245 42h3v75h-3zM250 26h3v107h-3zM255 48h3v64h-3zM260 42h3v77h-3zM265 35h3v90h-3zM270 50h3v61h-3zM275 43h3v74h-3zM280 54h3v53h-3zM285 42h3v77h-3zM290 41h3v78h-3zM295 46h3v68h-3zM300 42h3v76h-3zM305 53h3v54h-3zM310 48h3v64h-3zM315 51h3v58h-3zM320 52h3v55h-3zM325 56h3v49h-3zM330 52h3v57h-3zM335 52h3v56h-3zM340 58h3v44h-3zM345 54h3v52h-3zM350 61h3v37h-3zM355 51h3v58h-3zM360 50h3v59h-3zM365 43h3v74h-3zM370 45h3v71h-3zM375 53h3v54h-3zM380 50h3v60h-3zM385 30h3v99h-3zM390 46h3v67h-3zM395 33h3v94h-3zM400 40h3v80h-3zM405 40h3v79h-3zM410 41h3v78h-3zM415 18h3v124h-3zM420 37h3v86h-3zM425 32h3v96h-3zM430 26h3v107h-3zM435 9h3v142h-3zM440 35h3v89h-3zM445 23h3v114h-3zM450 19h3v121h-3zM455 8h3v144h-3zM460 10h3v140h-3zM465 9h3v143h-3zM470 29h3v103h-3zM475 24h3v112h-3zM480 26h3v108h-3zM485 8h3v144h-3zM490 5h3v149h-3zM495 33h3v94h-3zM500 32h3v96h-3zM505 30h3v99h-3zM510 30h3v100h-3zM515 22h3v117h-3zM520 18h3v124h-3zM525 29h3v102h-3zM530 38h3v84h-3zM535 24h3v112h-3zM540 26h3v109h-3zM545 19h3v122h-3zM550 6h3v149h-3zM555 15h3v131h-3zM560 21h3v119h-3zM565 17h3v126h-3zM570 16h3v128h-3zM575 38h3v85h-3zM580 11h3v138h-3zM585 16h3v128h-3zM590 14h3v131h-3zM595 18h3v124h-3zM600 32h3v96h-3zM605 33h3v94h-3zM610 42h3v75h-3zM615 29h3v102h-3zM620 46h3v69h-3zM625 47h3v67h-3zM630 44h3v72h-3zM635 47h3v67h-3zM640 53h3v54h-3zM645 59h3v42h-3zM650 60h3v39h-3zM655 59h3v42h-3zM660 61h3v39h-3zM665 58h3v44h-3zM670 63h3v33h-3zM675 53h3v53h-3zM680 56h3v48h-3zM685 61h3v38h-3zM690 59h3v43h-3zM695 56h3v47h-3zM700 55h3v50h-3zM705 58h3v44h-3zM710 45h3v70h-3zM715 41h3v77h-3zM720 50h3v61h-3zM725 48h3v63h-3zM730 55h3v50h-3zM735 54h3v52h-3zM740 49h3v63h-3zM745 49h3v61h-3zM750 37h3v86h-3zM755 50h3v59h-3zM760 53h3v54h-3zM765 32h3v97h-3zM770 40h3v79h-3zM775 49h3v63h-3zM780 39h3v82h-3zM785 51h3v59h-3zM790 38h3v83h-3zM795 27h3v105h-3zM800 30h3v101h-3zM805 33h3v93h-3zM810 44h3v73h-3zM815 41h3v78h-3zM820 46h3v68h-3zM825 31h3v98h-3zM830 37h3v87h-3zM835 31h3v99h-3zM840 42h3v77h-3zM845 44h3v71h-3zM850 30h3v100h-3zM855 26h3v108h-3zM860 30h3v101h-3zM865 31h3v98h-3zM870 31h3v98h-3zM875 33h3v93h-3zM880 46h3v68h-3zM885 39h3v81h-3zM890 44h3v73h-3zM895 52h3v57h-3zM900 52h3v56h-3zM905 47h3v66h-3zM910 48h3v65h-3zM915 39h3v82h-3zM920 34h3v92h-3zM925 46h3v69h-3zM930 36h3v87h-3zM935 36h3v88h-3zM940 38h3v85h-3zM945 50h3v60h-3zM950 53h3v53h-3zM955 54h3v52h-3zM960 55h3v50h-3zM965 56h3v49h-3zM970 49h3v62h-3zM975 46h3v69h-3zM980 48h3v65h-3zM985 54h3v52h-3zM990 52h3v55h-3zM995 51h3v58h-3z" /></svg>
+            <div class="mock-loop"><span>Solo</span></div>
+            <div class="mock-marker" style="left: 12%"><span>Intro</span></div>
+            <div class="mock-marker" style="left: 38%"><span>Solo</span></div>
+            <div class="mock-marker" style="left: 64%"><span>Bridge</span></div>
+            <div class="mock-playhead"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" id="features">
+        <h2>Everything you need to practise, and no more</h2>
+        <div class="feature-grid">
+          <article>
+            <h3>Slow down, same pitch</h3>
+            <p>Play anything from 10% to 150% speed. The notes stay where they are, so you can hear every one of them.</p>
+          </article>
+          <article>
+            <h3>Shift the pitch</h3>
+            <p>±12 semitones with ±50 cents of fine tuning, independent of speed. Play along in standard tuning or match a slightly detuned record.</p>
+          </article>
+          <article>
+            <h3>Seamless loops</h3>
+            <p>Save named loops from your markers. Each remembers its own speed, and an optional pre-roll gives you a beat to get ready.</p>
+          </article>
+          <article>
+            <h3>Speed trainer</h3>
+            <p>Every pass of the loop goes a few percent faster, until you're playing it at full speed.</p>
+          </article>
+          <article>
+            <h3>Markers that land on the note</h3>
+            <p>Drop a marker while listening. The app compensates for audio latency and your reaction time, and can snap to the nearest note attack.</p>
+          </article>
+          <article>
+            <h3>Remembers every song</h3>
+            <p>Markers, loops and settings are saved per song, keyed by the file's contents, so they come back even if you rename or move it.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="keys">
+        <div class="keys-text">
+          <h2>Keep your left hand on the neck</h2>
+          <p>
+            Nearly every shortcut sits under the right hand, vim-style, so you can drive the app between phrases
+            without putting the guitar down. Press <kbd>?</kbd> in the app for the full list.
+          </p>
+        </div>
+        <dl class="key-list">
+          <div><dt><kbd>Space</kbd></dt><dd>Play / pause</dd></div>
+          <div><dt><kbd>j</kbd> <kbd>k</kbd></dt><dd>Speed −5% / +5%</dd></div>
+          <div><dt><kbd>h</kbd> <kbd>l</kbd></dt><dd>Nudge back / forward</dd></div>
+          <div><dt><kbd>m</kbd></dt><dd>Drop a marker</dd></div>
+          <div><dt><kbd>v</kbd> <kbd>Enter</kbd></dt><dd>Select a range, make it a loop</dd></div>
+          <div><dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Switch saved loops</dd></div>
+          <div><dt><kbd>u</kbd></dt><dd>Speed trainer on / off</dd></div>
+        </dl>
+      </section>
+
+      <section class="download" id="download">
+        <h2>Download</h2>
+        <p class="download-status" id="download-status">Looking up the latest release…</p>
+        <div class="platform-grid">
+          <article class="platform" data-platform="linux">
+            <h3>Linux</h3>
+            <ul class="asset-list" data-assets="linux"></ul>
+            <p class="first-launch">Make the AppImage executable with <code>chmod +x</code>, then run it. Audio goes through ALSA, which reaches PipeWire and PulseAudio.</p>
+          </article>
+          <article class="platform" data-platform="windows">
+            <h3>Windows</h3>
+            <ul class="asset-list" data-assets="windows"></ul>
+            <p class="first-launch">The installer isn't code-signed, so SmartScreen warns you. Click <b>More info</b>, then <b>Run anyway</b>.</p>
+          </article>
+          <article class="platform" data-platform="mac">
+            <h3>macOS</h3>
+            <ul class="asset-list" data-assets="mac"></ul>
+            <p class="first-launch">Apple Silicon only. The app isn't signed: after moving it to Applications, run <code>xattr -cr "/Applications/Rusty Riffs.app"</code> once, then open it normally.</p>
+          </article>
+        </div>
+        <p class="build-note">
+          Prefer to build it yourself? The <a href="https://github.com/lyingpasta/rusty-riffs#setup">README</a> has the steps for every OS.
+          Supported formats: mp3, wav, flac, m4a (AAC) and ogg (Vorbis).
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <span>Rusty Riffs is free software under the <a href="https://github.com/lyingpasta/rusty-riffs/blob/main/LICENSE">MIT License</a>.</span>
+      <span>Built with Rust, Tauri and Svelte. <a href="https://github.com/lyingpasta/rusty-riffs/issues">Report an issue</a></span>
+    </footer>
+  </body>
+</html>

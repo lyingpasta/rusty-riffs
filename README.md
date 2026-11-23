@@ -4,6 +4,8 @@ A desktop practice player for learning guitar parts by ear. Slow a recording dow
 
 Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Svelte 5 + TypeScript.
 
+**[Download it from the website](https://lyingpasta.github.io/rusty-riffs/)** for Linux, Windows or macOS.
+
 ## Features
 
 - Opens mp3, wav, flac, m4a (AAC) and ogg (Vorbis), via the file dialog or drag-and-drop
@@ -170,6 +172,10 @@ The installers are not code-signed, so the operating systems warn before the fir
 - **macOS:** the app is reported as damaged or from an unidentified developer. After moving it to Applications, run `xattr -cr "/Applications/Rusty Riffs.app"` once, then open it normally.
 - **Windows:** SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**.
 - **Linux:** no warning. Make the AppImage executable with `chmod +x` before running it.
+
+## Website
+
+The download page lives in `site/`: plain HTML, CSS and JavaScript with no build step. It asks the GitHub API for the latest published release and offers the installer that matches the visitor's OS. `.github/workflows/pages.yml` copies the app's fonts into it and deploys it to GitHub Pages whenever `site/` changes on `main`.
 
 ## Checks
 
