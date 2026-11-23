@@ -1,22 +1,58 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { interaction } from './interaction.svelte'
   import { availableUpdateAction, describeUpdateStatus } from './updateStatus'
   import { updates } from './updates.svelte'
 
   const isInstallOffered = $derived(availableUpdateAction(updates.status) === 'install')
   const isBusy = $derived(availableUpdateAction(updates.status) === null)
+  const FOCUS_DIRECTIONS: Record<string, 1 | -1> = { ArrowLeft: -1, ArrowRight: 1 }
 
-  function takeFocus(dialog: HTMLElement): void {
-    dialog.focus()
+  let dialog: HTMLElement
+  let actions = $state<HTMLElement | null>(null)
+
+  function buttons(): HTMLButtonElement[] {
+    return actions ? [...actions.querySelectorAll('button')] : []
+  }
+
+  function moveFocus(direction: 1 | -1): void {
+    const choices = buttons()
+    const current = choices.indexOf(document.activeElement as HTMLButtonElement)
+    const next = (current + direction + choices.length) % choices.length
+    choices[next]?.focus()
+  }
+
+  function focusDefaultChoice(): void {
+    const choices = buttons()
+    const defaultChoice = choices[choices.length - 1] ?? dialog
+    defaultChoice.focus()
   }
 
   function close(): void {
     interaction.isUpdatePromptOpen = false
   }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    event.stopPropagation()
+    if (event.key === 'Escape') return close()
+    const direction = FOCUS_DIRECTIONS[event.key]
+    if (!direction) return
+    event.preventDefault()
+    moveFocus(direction)
+  }
+
+  $effect(() => {
+    if (isInstallOffered || !isBusy) focusDefaultChoice()
+  })
+
+  onMount(() => {
+    window.addEventListener('keydown', handleKeydown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeydown, { capture: true })
+  })
 </script>
 
 <div class="backdrop" role="presentation">
-  <div class="dialog" role="alertdialog" aria-modal="true" aria-label="Update available" tabindex="-1" use:takeFocus>
+  <div class="dialog" role="alertdialog" aria-modal="true" aria-label="Update available" tabindex="-1" bind:this={dialog}>
     <h2>Update available</h2>
     {#if updates.status.kind === 'available'}
       <p>
@@ -27,12 +63,13 @@
       <p class="status" aria-live="polite">{describeUpdateStatus(updates.status)}</p>
     {/if}
     {#if !isBusy}
-      <div class="actions">
+      <div class="actions" bind:this={actions}>
         <button onclick={close}>Later</button>
         {#if isInstallOffered}
           <button class="primary" onclick={() => updates.install()}>Install and restart</button>
         {/if}
       </div>
+      <p class="hint">Enter to choose, ← → to switch, Esc for later</p>
     {/if}
   </div>
 </div>
@@ -71,6 +108,11 @@
 
   .status {
     color: var(--text);
+  }
+
+  .hint {
+    font-size: 12px;
+    text-align: right;
   }
 
   .actions {
