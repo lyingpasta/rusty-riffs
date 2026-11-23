@@ -144,6 +144,33 @@ The output goes to `src-tauri/target/release/bundle/`:
 
 So far this has only been built and tested on Linux. The Windows and macOS steps follow Tauri's documented prerequisites but haven't been run yet.
 
+## Releasing
+
+Releases are built by GitHub Actions (`.github/workflows/release.yml`) with [release-please](https://github.com/googleapis/release-please):
+
+1. Every push to `main` updates a single open **release PR**, with the next version number and a changelog drawn from the commit messages.
+2. Merging that PR tags the version and creates a **draft** GitHub release.
+3. The workflow then builds the app on Linux, Windows and macOS (Apple Silicon) and attaches the installers to the draft. Check it on GitHub and click Publish.
+
+release-please reads [Conventional Commits](https://www.conventionalcommits.org) to pick the version, so commit messages need a type prefix:
+
+| Prefix | Example | Effect |
+|---|---|---|
+| `feat:` | `feat: add selection mode` | minor version bump, listed under Features |
+| `fix:` | `fix: stop held keys piling up seeks` | patch bump, listed under Bug Fixes |
+| `feat!:` / `fix!:` | `feat!: change the settings format` | breaking change (minor bump while below 1.0) |
+| `docs:`, `chore:`, `refactor:`… | `docs: explain the release flow` | no release on their own |
+
+The version lives in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `src-tauri/Cargo.lock`; the release PR bumps all four.
+
+### Opening the unsigned builds
+
+The installers are not code-signed, so the operating systems warn before the first launch:
+
+- **macOS:** the app is reported as damaged or from an unidentified developer. After moving it to Applications, run `xattr -cr "/Applications/Rusty Riffs.app"` once, then open it normally.
+- **Windows:** SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**.
+- **Linux:** no warning. Make the AppImage executable with `chmod +x` before running it.
+
 ## Checks
 
 ```sh
