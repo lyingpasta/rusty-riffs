@@ -9,6 +9,7 @@
   import Pad from './panel/Pad.svelte'
   import Stepper from './panel/Stepper.svelte'
   import TimeCell from './panel/TimeCell.svelte'
+  import HorizontalScroller from './HorizontalScroller.svelte'
 
   const TRAINER_STEP_INCREMENT = 1
   const TRAINER_TARGET_INCREMENT = 5
@@ -38,128 +39,132 @@
 </script>
 
 <nav class="bar">
-  <Group label="Song">
-    <Pad icon="open" onclick={actions.openSong} disabled={player.isLoading} title="Open a song (O)" />
-    <Pad
-      icon={player.state?.isPlaying ? 'pause' : 'play'}
-      onclick={actions.togglePlaying}
-      disabled={!settings}
-      isOn={Boolean(player.state?.isPlaying)}
-      title="Play / pause (Space)"
-    />
-    <TimeCell />
-  </Group>
-
-  {#if settings}
-    <Group label="Speed">
-      <Stepper
-        label="Speed (j / k)"
-        icon="speed"
-        value="{Math.round(currentSpeed(settings))}%"
-        ondecrement={() => actions.changeSpeed(-1)}
-        onincrement={() => actions.changeSpeed(1)}
-        onreset={actions.resetSpeed}
-      />
-    </Group>
-
-    <Group label="Loop">
-      <select
-        class="loop-select"
-        value={settings.activeLoopId?.toString() ?? NO_LOOP}
-        onchange={(event) => chooseLoop(event.currentTarget.value)}
-        title="Saved loops ([ / ])"
-      >
-        <option value={NO_LOOP}>No loop</option>
-        {#each orderedLoops as span (span.loop.id)}
-          <option value={span.loop.id.toString()}>{span.loop.name}</option>
-        {/each}
-      </select>
-      <Pad
-        icon="loop"
-        onclick={actions.toggleLoop}
-        isOn={settings.isLoopEnabled}
-        disabled={settings.activeLoopId === null}
-        title="Loop on / off (o)"
-      />
-      <Pad
-        icon="new-loop"
-        onclick={actions.startNewLoop}
-        isOn={interaction.mode.kind === 'new-loop'}
-        title="New loop from markers (n)"
-      />
-    </Group>
-
-    <div class="secondary">
-      <Group label="Pitch" isSecondary>
-        <Stepper
-          label="Pitch in semitones"
-          icon="pitch"
-          value={signed(settings.pitch.semitones)}
-          ondecrement={() => actions.changePitch(-1)}
-          onincrement={() => actions.changePitch(1)}
-          onreset={actions.resetPitch}
+  <HorizontalScroller>
+    <div class="row">
+      <Group label="Song">
+        <Pad icon="open" onclick={actions.openSong} disabled={player.isLoading} title="Open a song (O)" />
+        <Pad
+          icon={player.state?.isPlaying ? 'pause' : 'play'}
+          onclick={actions.togglePlaying}
+          disabled={!settings}
+          isOn={Boolean(player.state?.isPlaying)}
+          title="Play / pause (Space)"
         />
-        <Stepper
-          label="Fine tune in cents"
-          icon="fine"
-          value="{signed(settings.pitch.cents)}¢"
-          ondecrement={() => actions.changeCents(-1)}
-          onincrement={() => actions.changeCents(1)}
-        />
+        <TimeCell />
       </Group>
 
-      <Group label="Practice" isSecondary>
-        <Pad icon="preroll" onclick={actions.cyclePreroll} isOn={settings.prerollSeconds > 0} title="Pre-roll before each loop restart (p)">
-          {prerollLabel}
-        </Pad>
-        <Pad icon="trainer" onclick={actions.toggleTrainer} isOn={settings.trainer.isEnabled} title="Speed trainer on / off (u)" />
-        <Stepper
-          label="Trainer step per loop"
-          value="+{settings.trainer.stepPercent}%"
-          ondecrement={() => updateTrainer({ stepPercent: settings.trainer.stepPercent - TRAINER_STEP_INCREMENT })}
-          onincrement={() => updateTrainer({ stepPercent: settings.trainer.stepPercent + TRAINER_STEP_INCREMENT })}
-        />
-        <Stepper
-          label="Trainer target speed"
-          value="→{settings.trainer.targetPercent}%"
-          ondecrement={() => updateTrainer({ targetPercent: settings.trainer.targetPercent - TRAINER_TARGET_INCREMENT })}
-          onincrement={() => updateTrainer({ targetPercent: settings.trainer.targetPercent + TRAINER_TARGET_INCREMENT })}
-        />
-      </Group>
+      {#if settings}
+        <Group label="Speed">
+          <Stepper
+            label="Speed (j / k)"
+            icon="speed"
+            value="{Math.round(currentSpeed(settings))}%"
+            ondecrement={() => actions.changeSpeed(-1)}
+            onincrement={() => actions.changeSpeed(1)}
+            onreset={actions.resetSpeed}
+          />
+        </Group>
 
-      <Group label="Timing" isSecondary>
-        <Pad icon="snap" onclick={actions.toggleSnap} isOn={timing.isSnapEnabled} title="Snap new markers to note attacks" />
-        <Stepper
-          label="Timing offset for markers dropped while playing"
-          icon="timing"
-          value="{timing.offsetMilliseconds}ms"
-          ondecrement={() => actions.changeTimingOffset(-TIMING_STEP_MILLISECONDS)}
-          onincrement={() => actions.changeTimingOffset(TIMING_STEP_MILLISECONDS)}
-        />
-        <Pad icon="calibrate" onclick={actions.openCalibration} title="Calibrate timing by tapping along to clicks" />
+        <Group label="Loop">
+          <select
+            class="loop-select"
+            value={settings.activeLoopId?.toString() ?? NO_LOOP}
+            onchange={(event) => chooseLoop(event.currentTarget.value)}
+            title="Saved loops ([ / ])"
+          >
+            <option value={NO_LOOP}>No loop</option>
+            {#each orderedLoops as span (span.loop.id)}
+              <option value={span.loop.id.toString()}>{span.loop.name}</option>
+            {/each}
+          </select>
+          <Pad
+            icon="loop"
+            onclick={actions.toggleLoop}
+            isOn={settings.isLoopEnabled}
+            disabled={settings.activeLoopId === null}
+            title="Loop on / off (o)"
+          />
+          <Pad
+            icon="new-loop"
+            onclick={actions.startNewLoop}
+            isOn={interaction.mode.kind === 'new-loop'}
+            title="New loop from markers (n)"
+          />
+        </Group>
+
+        <div class="secondary">
+          <Group label="Pitch" isSecondary>
+            <Stepper
+              label="Pitch in semitones"
+              icon="pitch"
+              value={signed(settings.pitch.semitones)}
+              ondecrement={() => actions.changePitch(-1)}
+              onincrement={() => actions.changePitch(1)}
+              onreset={actions.resetPitch}
+            />
+            <Stepper
+              label="Fine tune in cents"
+              icon="fine"
+              value="{signed(settings.pitch.cents)}¢"
+              ondecrement={() => actions.changeCents(-1)}
+              onincrement={() => actions.changeCents(1)}
+            />
+          </Group>
+
+          <Group label="Practice" isSecondary>
+            <Pad icon="preroll" onclick={actions.cyclePreroll} isOn={settings.prerollSeconds > 0} title="Pre-roll before each loop restart (p)">
+              {prerollLabel}
+            </Pad>
+            <Pad icon="trainer" onclick={actions.toggleTrainer} isOn={settings.trainer.isEnabled} title="Speed trainer on / off (u)" />
+            <Stepper
+              label="Trainer step per loop"
+              value="+{settings.trainer.stepPercent}%"
+              ondecrement={() => updateTrainer({ stepPercent: settings.trainer.stepPercent - TRAINER_STEP_INCREMENT })}
+              onincrement={() => updateTrainer({ stepPercent: settings.trainer.stepPercent + TRAINER_STEP_INCREMENT })}
+            />
+            <Stepper
+              label="Trainer target speed"
+              value="→{settings.trainer.targetPercent}%"
+              ondecrement={() => updateTrainer({ targetPercent: settings.trainer.targetPercent - TRAINER_TARGET_INCREMENT })}
+              onincrement={() => updateTrainer({ targetPercent: settings.trainer.targetPercent + TRAINER_TARGET_INCREMENT })}
+            />
+          </Group>
+
+          <Group label="Timing" isSecondary>
+            <Pad icon="snap" onclick={actions.toggleSnap} isOn={timing.isSnapEnabled} title="Snap new markers to note attacks" />
+            <Stepper
+              label="Timing offset for markers dropped while playing"
+              icon="timing"
+              value="{timing.offsetMilliseconds}ms"
+              ondecrement={() => actions.changeTimingOffset(-TIMING_STEP_MILLISECONDS)}
+              onincrement={() => actions.changeTimingOffset(TIMING_STEP_MILLISECONDS)}
+            />
+            <Pad icon="calibrate" onclick={actions.openCalibration} title="Calibrate timing by tapping along to clicks" />
+          </Group>
+        </div>
+      {/if}
+
+      <span class="filler" aria-hidden="true"></span>
+
+      <Group label="View" isSecondary>
+        <Pad icon="theme" onclick={actions.cycleTheme} title="Theme: {interaction.theme.name} (;)" />
+        <Pad icon="help" onclick={actions.toggleCheatSheet} title="Keyboard shortcuts (?)" />
+        <Pad icon="info" onclick={actions.toggleAbout} title="About and updates (a)" />
       </Group>
     </div>
-  {/if}
-
-  <span class="filler" aria-hidden="true"></span>
-
-  <Group label="View" isSecondary>
-    <Pad icon="theme" onclick={actions.cycleTheme} title="Theme: {interaction.theme.name} (;)" />
-    <Pad icon="help" onclick={actions.toggleCheatSheet} title="Keyboard shortcuts (?)" />
-    <Pad icon="info" onclick={actions.toggleAbout} title="About and updates (a)" />
-  </Group>
+  </HorizontalScroller>
 </nav>
 
 <style>
   .bar {
+    flex: none;
+    background: var(--bar);
+  }
+
+  .row {
     display: flex;
-    flex-wrap: nowrap;
     gap: 1px;
     height: var(--bar-height);
-    overflow-x: auto;
-    overflow-y: hidden;
-    background: var(--bar);
-    scrollbar-width: thin;
   }
 
   .bar :global(.group) {
