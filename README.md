@@ -169,7 +169,7 @@ The version lives in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Car
 
 The installers are not code-signed, so the operating systems warn before the first launch:
 
-- **macOS:** the app is reported as damaged or from an unidentified developer. After moving it to Applications, run `xattr -cr "/Applications/Rusty Riffs.app"` once, then open it normally.
+- **macOS:** the app is signed ad hoc but not notarized, so macOS blocks the first launch. Open **System Settings → Privacy & Security** and click **Open Anyway**. Builds before 0.1.1 aren't signed at all and are reported as damaged: after moving one to Applications, run `xattr -cr "/Applications/Rusty Riffs.app"` once, then open it normally.
 - **Windows:** SmartScreen shows "Windows protected your PC". Click **More info**, then **Run anyway**.
 - **Linux:** no warning. Make the AppImage executable with `chmod +x` before running it.
 

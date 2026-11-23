@@ -127,7 +127,7 @@
           <article class="platform" data-platform="mac">
             <h3>macOS</h3>
             <ul class="asset-list" data-assets="mac"></ul>
-            <p class="first-launch">Apple Silicon only. The app isn't signed: after moving it to Applications, run <code>xattr -cr "/Applications/Rusty Riffs.app"</code> once, then open it normally.</p>
+            <p class="first-launch">Apple Silicon only. The app isn't notarized, so macOS blocks the first launch: open <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>. If it says the app is damaged, run <code>xattr -cr "/Applications/Rusty Riffs.app"</code> once instead.</p>
           </article>
         </div>
         <p class="build-note">
