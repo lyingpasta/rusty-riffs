@@ -165,6 +165,14 @@ release-please reads [Conventional Commits](https://www.conventionalcommits.org)
 
 The version lives in `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml` and `src-tauri/Cargo.lock`; the release PR bumps all four.
 
+### Verifying a download
+
+Every installer carries a build provenance attestation, which proves it was built by this repository's release workflow. With the [GitHub CLI](https://cli.github.com):
+
+```sh
+gh attestation verify Rusty.Riffs_0.1.1_amd64.AppImage --repo lyingpasta/rusty-riffs
+```
+
 ### Opening the unsigned builds
 
 The installers are not code-signed, so the operating systems warn before the first launch:
