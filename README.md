@@ -1,10 +1,27 @@
+<div align="center">
+
+<a href="https://lyingpasta.github.io/rusty-riffs/"><img src="docs/assets/logo.svg" width="140" height="140" alt="Rusty Riffs logo: a bronze riff that loops back on itself"></a>
+
 # Rusty Riffs
 
-A desktop practice player for learning guitar parts by ear. Slow a recording down without changing its pitch, shift its pitch for songs in other tunings, loop the hard bits seamlessly, and drop markers on the sections you're working on.
+**Learn guitar parts by ear.**
+
+A free desktop practice player. Slow a recording down without changing its pitch,<br>
+shift it for songs in other tunings, loop the hard bits seamlessly and mark the sections you're working on.
+
+[![Latest release](https://img.shields.io/github/v/release/lyingpasta/rusty-riffs?style=flat-square&label=release&labelColor=11141b&color=c59a5f)](https://github.com/lyingpasta/rusty-riffs/releases/latest)
+[![Platforms](https://img.shields.io/badge/platforms-Linux%20%C2%B7%20Windows%20%C2%B7%20macOS-c59a5f?style=flat-square&labelColor=11141b)](https://lyingpasta.github.io/rusty-riffs/)
+[![MIT License](https://img.shields.io/github/license/lyingpasta/rusty-riffs?style=flat-square&labelColor=11141b&color=c59a5f)](LICENSE)
+[![Built with Tauri, Rust and Svelte](https://img.shields.io/badge/built%20with-Tauri%20%C2%B7%20Rust%20%C2%B7%20Svelte-c59a5f?style=flat-square&labelColor=11141b)](#how-it-works)
+
+### [Download for Linux, Windows or macOS](https://lyingpasta.github.io/rusty-riffs/)
+
+[Features](#features) · [Shortcuts](#keyboard-shortcuts) · [Timing](#timing-compensation) · [Build from source](#setup) · [Changelog](CHANGELOG.md)
+
+</div>
+
 
 Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Svelte 5 + TypeScript.
-
-**[Download it from the website](https://lyingpasta.github.io/rusty-riffs/)** for Linux, Windows or macOS.
 
 ## Features
 
@@ -240,6 +257,10 @@ rm -rf src-tauri/icons/android src-tauri/icons/ios
 ```
 
 Domain terms (song, marker, loop, pre-roll, speed trainer…) are defined in [GLOSSARY.md](GLOSSARY.md).
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. [Open an issue](https://github.com/lyingpasta/rusty-riffs/issues) to report a problem or talk through a change before building it. To work on the code, follow [Setup](#setup), run the [checks](#checks) before opening a pull request, and title it as a [Conventional Commit](#releasing) (`feat: …`, `fix: …`) so it lands in the changelog.
 
 ## License
 
