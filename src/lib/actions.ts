@@ -226,6 +226,7 @@ export const actions = {
     interaction.returnToNormal()
     interaction.isCheatSheetOpen = false
     interaction.isAboutOpen = false
+    interaction.isUpdatePromptOpen = false
   },
   switchLoop(direction: 1 | -1): void {
     withSettings((settings) => {
@@ -303,6 +304,7 @@ export const actions = {
   },
   toggleAbout(): void {
     interaction.isCheatSheetOpen = false
+    interaction.isUpdatePromptOpen = false
     interaction.isAboutOpen = !interaction.isAboutOpen
   },
 }

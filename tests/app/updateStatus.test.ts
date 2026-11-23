@@ -25,7 +25,7 @@ test('a failure names the step that failed and why', () => {
 })
 
 test('an available update offers to install it', () => {
-  assert.equal(availableUpdateAction({ kind: 'available', version: '0.2.0' }), 'install')
+  assert.equal(availableUpdateAction({ kind: 'available', version: '0.2.0', currentVersion: '0.1.1' }), 'install')
 })
 
 test('settled states offer a new check', () => {

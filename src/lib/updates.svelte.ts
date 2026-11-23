@@ -11,7 +11,9 @@ class Updates {
     this.status = { kind: 'checking' }
     try {
       this.pendingUpdate = await check()
-      this.status = this.pendingUpdate ? { kind: 'available', version: this.pendingUpdate.version } : { kind: 'up-to-date' }
+      this.status = this.pendingUpdate
+        ? { kind: 'available', version: this.pendingUpdate.version, currentVersion: this.pendingUpdate.currentVersion }
+        : { kind: 'up-to-date' }
     } catch (error) {
       this.status = { kind: 'failed', step: 'check', reason: String(error) }
     }

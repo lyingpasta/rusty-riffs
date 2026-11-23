@@ -45,7 +45,7 @@ export const shortcuts: Shortcut[] = [
   { group: 'View', mode: 'any', keys: [';'], label: ';', description: 'Next colour theme', run: actions.cycleTheme },
   { group: 'Help', mode: 'any', keys: ['?'], label: '?', description: 'Show / hide shortcuts', run: actions.toggleCheatSheet },
   { group: 'Help', mode: 'any', keys: ['a'], label: 'a', description: 'About, version and updates', run: actions.toggleAbout },
-  { group: 'Help', mode: 'any', keys: ['Escape'], label: 'Esc', description: 'Cancel selection or new loop / close help or About', run: actions.cancel },
+  { group: 'Help', mode: 'any', keys: ['Escape'], label: 'Esc', description: 'Cancel selection or new loop / close help, About or the update popup', run: actions.cancel },
 ]
 
 function isTypingInField(event: KeyboardEvent): boolean {

@@ -2,7 +2,7 @@ export type UpdateStatus =
   | { kind: 'idle' }
   | { kind: 'checking' }
   | { kind: 'up-to-date' }
-  | { kind: 'available'; version: string }
+  | { kind: 'available'; version: string; currentVersion: string }
   | { kind: 'downloading'; downloadedBytes: number; totalBytes: number | null }
   | { kind: 'restarting' }
   | { kind: 'failed'; step: 'check' | 'install'; reason: string }

@@ -9,6 +9,7 @@
   import CalibrationDialog from './lib/CalibrationDialog.svelte'
   import AboutDialog from './lib/AboutDialog.svelte'
   import CheatSheet from './lib/CheatSheet.svelte'
+  import UpdatePrompt from './lib/UpdatePrompt.svelte'
   import RenameDialog from './lib/RenameDialog.svelte'
   import StatusLine from './lib/StatusLine.svelte'
   import Toolbar from './lib/Toolbar.svelte'
@@ -37,6 +38,11 @@
     return new Promise((resolve) => setTimeout(resolve, milliseconds))
   }
 
+  async function offerUpdate(): Promise<void> {
+    await updates.check()
+    if (updates.status.kind === 'available') interaction.isUpdatePromptOpen = true
+  }
+
   function handleKeydown(event: KeyboardEvent): void {
     if (interaction.renameTarget || interaction.isCalibrationOpen) return
     const shortcut = findShortcut(event, interaction.mode.kind)
@@ -48,9 +54,10 @@
   onMount(() => {
     const disconnect = player.connect()
     const startup = disconnect.then(() => player.openLast()).catch((error) => (player.error = String(error)))
-    Promise.all([startup, wait(MINIMUM_STARTUP_SPLASH_MILLISECONDS)]).then(() => (isStarting = false))
+    Promise.all([startup, wait(MINIMUM_STARTUP_SPLASH_MILLISECONDS)])
+      .then(() => (isStarting = false))
+      .then(offerUpdate)
     const unlistenDrop = onSongFileDropped((path) => player.open(path))
-    updates.check()
     return () => {
       disconnect.then((stop) => stop()).catch(() => undefined)
       unlistenDrop.then((unlisten) => unlisten())
@@ -86,4 +93,8 @@
 
 {#if interaction.isAboutOpen}
   <AboutDialog />
+{/if}
+
+{#if interaction.isUpdatePromptOpen}
+  <UpdatePrompt />
 {/if}

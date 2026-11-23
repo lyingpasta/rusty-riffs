@@ -19,6 +19,7 @@ class Interaction {
   notice = $state<string | null>(null)
   isCheatSheetOpen = $state(false)
   isAboutOpen = $state(false)
+  isUpdatePromptOpen = $state(false)
   isCalibrationOpen = $state(false)
   theme = $state<Theme>(loadTheme())
   private noticeTimer: ReturnType<typeof setTimeout> | undefined
