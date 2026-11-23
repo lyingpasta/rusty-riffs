@@ -1,3 +1,4 @@
+import type { Release } from './releaseNotes'
 import { loadTheme, type Theme } from './theme'
 
 export type Mode =
@@ -20,6 +21,7 @@ class Interaction {
   isCheatSheetOpen = $state(false)
   isAboutOpen = $state(false)
   isUpdatePromptOpen = $state(false)
+  whatsNew = $state<Release[] | null>(null)
   isCalibrationOpen = $state(false)
   theme = $state<Theme>(loadTheme())
   private noticeTimer: ReturnType<typeof setTimeout> | undefined

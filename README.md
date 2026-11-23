@@ -21,7 +21,7 @@ Built with [Tauri 2](https://tauri.app): the audio engine is Rust, the UI is Sve
 - Three dark colour themes: Ink & bronze, Petrol & moonlight, Aubergine & ember
 - Every setting is saved per song, keyed by the file's contents, so reopening a song (even renamed or moved) restores everything
 - The app reopens the last song you played when it starts
-- Built-in updates: the app checks for a new version at launch and offers it in a popup. The About dialog (`a`) shows the version and can check again
+- Built-in updates: the app checks for a new version at launch and offers it in a popup. After an update, a What's new popup lists the changes from the changelog. The About dialog (`a`) shows the version and can check again
 
 ## Keyboard shortcuts
 
@@ -57,7 +57,7 @@ Nearly every key is under the right hand (thumb on Space), so you can drive the 
 | `;` | Next colour theme |
 | `?` | Show / hide shortcuts |
 | `a` | About, version and updates |
-| `Esc` | Cancel selection or new loop / close help, About or the update popup |
+| `Esc` | Cancel selection or new loop / close help, About or a popup |
 
 With the mouse:
 - Drag on the waveform to make a selection.

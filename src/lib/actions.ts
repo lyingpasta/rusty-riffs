@@ -227,6 +227,7 @@ export const actions = {
     interaction.isCheatSheetOpen = false
     interaction.isAboutOpen = false
     interaction.isUpdatePromptOpen = false
+    interaction.whatsNew = null
   },
   switchLoop(direction: 1 | -1): void {
     withSettings((settings) => {

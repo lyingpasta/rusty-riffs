@@ -1,6 +1,7 @@
 import { relaunch } from '@tauri-apps/plugin-process'
 import { check, type DownloadEvent, type Update } from '@tauri-apps/plugin-updater'
 import type { UpdateStatus } from './updateStatus'
+import { rememberInstalledUpdate } from './whatsNew'
 
 class Updates {
   status = $state<UpdateStatus>({ kind: 'idle' })
@@ -24,6 +25,7 @@ class Updates {
     if (!update || this.status.kind !== 'available') return
     this.status = { kind: 'downloading', downloadedBytes: 0, totalBytes: null }
     try {
+      rememberInstalledUpdate({ fromVersion: update.currentVersion, toVersion: update.version })
       await update.downloadAndInstall((event) => this.trackDownload(event))
       this.status = { kind: 'restarting' }
       await relaunch()

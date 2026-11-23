@@ -1,15 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { getVersion } from '@tauri-apps/api/app'
   import { interaction } from './lib/interaction.svelte'
   import { player } from './lib/player.svelte'
   import { findShortcut } from './lib/shortcuts'
   import { onSongFileDropped } from './lib/songPicker'
   import { updates } from './lib/updates.svelte'
+  import { releasesToAnnounce } from './lib/whatsNew'
   import Splash from './lib/brand/Splash.svelte'
   import CalibrationDialog from './lib/CalibrationDialog.svelte'
   import AboutDialog from './lib/AboutDialog.svelte'
   import CheatSheet from './lib/CheatSheet.svelte'
   import UpdatePrompt from './lib/UpdatePrompt.svelte'
+  import WhatsNewDialog from './lib/WhatsNewDialog.svelte'
   import RenameDialog from './lib/RenameDialog.svelte'
   import StatusLine from './lib/StatusLine.svelte'
   import Toolbar from './lib/Toolbar.svelte'
@@ -38,9 +41,14 @@
     return new Promise((resolve) => setTimeout(resolve, milliseconds))
   }
 
+  async function announceInstalledUpdate(): Promise<void> {
+    const releases = releasesToAnnounce(await getVersion())
+    if (releases.length > 0) interaction.whatsNew = releases
+  }
+
   async function offerUpdate(): Promise<void> {
     await updates.check()
-    if (updates.status.kind === 'available') interaction.isUpdatePromptOpen = true
+    if (updates.status.kind === 'available' && !interaction.whatsNew) interaction.isUpdatePromptOpen = true
   }
 
   function handleKeydown(event: KeyboardEvent): void {
@@ -56,6 +64,8 @@
     const startup = disconnect.then(() => player.openLast()).catch((error) => (player.error = String(error)))
     Promise.all([startup, wait(MINIMUM_STARTUP_SPLASH_MILLISECONDS)])
       .then(() => (isStarting = false))
+      .then(announceInstalledUpdate)
+      .catch((error) => console.warn("Could not show what's new", error))
       .then(offerUpdate)
     const unlistenDrop = onSongFileDropped((path) => player.open(path))
     return () => {
@@ -97,4 +107,8 @@
 
 {#if interaction.isUpdatePromptOpen}
   <UpdatePrompt />
+{/if}
+
+{#if interaction.whatsNew}
+  <WhatsNewDialog releases={interaction.whatsNew} />
 {/if}
