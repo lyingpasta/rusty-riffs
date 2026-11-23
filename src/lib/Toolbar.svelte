@@ -154,8 +154,8 @@
   .bar {
     display: flex;
     flex-wrap: nowrap;
+    flex: none;
     gap: 1px;
-    height: var(--bar-height);
     overflow-x: auto;
     overflow-y: hidden;
     background: var(--bar);
