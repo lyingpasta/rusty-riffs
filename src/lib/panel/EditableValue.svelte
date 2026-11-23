@@ -15,8 +15,22 @@
     oncommit: (text: string) => void
   } = $props()
 
+  let isFirstClickSinceFocus = false
+
+  function selectAll(event: FocusEvent & { currentTarget: HTMLInputElement }): void {
+    isFirstClickSinceFocus = true
+    event.currentTarget.select()
+  }
+
+  function keepSelectionOnFirstClick(event: MouseEvent & { currentTarget: HTMLInputElement }): void {
+    if (!isFirstClickSinceFocus) return
+    isFirstClickSinceFocus = false
+    event.currentTarget.select()
+  }
+
   function commit(event: FocusEvent & { currentTarget: HTMLInputElement }): void {
     const input = event.currentTarget
+    isFirstClickSinceFocus = false
     oncommit(input.value)
     input.value = String(value)
   }
@@ -36,7 +50,8 @@
       inputmode="numeric"
       aria-label={label}
       {value}
-      onfocus={(event) => event.currentTarget.select()}
+      onfocus={selectAll}
+      onclick={keepSelectionOnFirstClick}
       onkeydown={handleKeydown}
       onblur={commit}
     />{unit}
