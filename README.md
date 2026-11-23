@@ -171,11 +171,12 @@ Releases are built by GitHub Actions (`.github/workflows/release.yml`) with [rel
 
 1. Every push to `main` updates a single open **release PR**, with the next version number and a changelog drawn from the commit messages.
 2. Merging that PR tags the version and creates a **draft** GitHub release.
-3. The workflow then builds the app on Linux, Windows and macOS (Apple Silicon) and attaches the installers to the draft. Check it on GitHub and click Publish.
+3. The workflow then builds the app on Linux, Windows and macOS (Apple Silicon) and attaches the installers to the draft.
+4. Once every build has succeeded, the workflow publishes the release and marks it as the latest. If any build fails, the release stays a draft: fix the problem, then re-run the failed jobs.
 
 ### In-app updates
 
-The app uses the [Tauri updater](https://v2.tauri.app/plugin/updater/). At launch, and from the About dialog, it fetches `latest.json` from the latest **published** release, so a draft reaches users only once you click Publish. Update bundles are signed, and the app checks them against the public key in `src-tauri/tauri.conf.json`.
+The app uses the [Tauri updater](https://v2.tauri.app/plugin/updater/). At launch, and from the About dialog, it fetches `latest.json` from the latest **published** release, so a release reaches users only once it's published with every installer attached. Update bundles are signed, and the app checks them against the public key in `src-tauri/tauri.conf.json`.
 
 The release workflow signs with two repository secrets:
 
