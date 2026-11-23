@@ -6,8 +6,8 @@ const MILLISECONDS_PER_SECOND = 1000
 const NORMAL_SPEED_PERCENT = 100
 
 class Player {
-  state = $state<PlayerState | null>(null)
-  waveform = $state<Waveform | null>(null)
+  state = $state.raw<PlayerState | null>(null)
+  waveform = $state.raw<Waveform | null>(null)
   error = $state<string | null>(null)
   isLoading = $state(false)
   private reportedSeconds = 0
